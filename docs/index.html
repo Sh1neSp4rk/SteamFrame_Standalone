@@ -145,6 +145,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#hollowknight" data-guide="hollowknight"><span class="dot working"></span>Hollow Knight VR</a>
   <a href="#circuitsuperstars" data-guide="circuitsuperstars"><span class="dot working"></span>Circuit Superstars VR</a>
   <a href="#unrealrevived" data-guide="unrealrevived"><span class="dot working"></span>Unreal Revived VR</a>
+  <a href="#farcry" data-guide="farcry"><span class="dot working"></span>Far Cry VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
@@ -1376,6 +1377,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Hollow Knight VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the mod's virtual pad (A jump, X attack, B cast, Y dream nail, RT dash, LT super dash, RB quick cast, LB quick map, menu pause, view inventory, d-pad move/menus). Left stick click unbound (its action carries the d-pad touch); grips unused. Needs the FrameVR_HK plugin for Start/Back and the d-pad (see its page). Confirmed 2026-10-23.</td></tr>
 <tr><td>Circuit Superstars VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the FrameVR_CS virtual pad (the mod has no motion controls). Bumpers LB/RB, triggers, sticks, d-pad, menu Start (mod: double-tap first-person, hold recenter), view Back; grips unused. Confirmed 2026-10-23.</td></tr>
 <tr><td>Unreal Revived VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper alt-fire, A use item, B next item, X / left view translator, menu pause, right stick click recenter, left stick click / d-pad left previous item, d-pad up/down weapons. Right Y, d-pad right and grips unbound (12 pad buttons). Aim follows the right controller. Set through a Frame binding plus User.ini binds (see its page). Confirmed 2026-10-23.</td></tr>
+<tr><td>Far Cry VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper use, A grenades, B reload, X binoculars, menu pause, left stick click sprint, right stick left/right turn, up next weapon + zoom in, down zoom out; grips (80%) grab. Vehicles: left trigger leave, A reload, B change seat, X lights, left stick click change view. Confirmed 2026-10-23.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
@@ -2130,6 +2132,43 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
 <h2>Undo</h2>
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3358004613; rm -rf ~/.local/share/Steam/steamapps/compatdata/3358004613"
 # then remove ~/PCVR/UnrealRevivedVR and the steam.app.3358004613 files in ~/.config/openvr/config/openxr (chmod 644 first)</code></pre>
+</article>
+
+<!-- ===================== FAR CRY VR ===================== -->
+<article id="farcry" class="guide" data-title="Far Cry VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Far Cry VR: a 32-bit OpenVR mod under Proton, with a native helper for the menus</h1>
+  <p class="lede">fholger's CryVR mod turns the 2004 Far Cry into a full VR game through a DXVK fork that drives OpenVR. On the Frame it runs under Proton through FEX. Three things stood in the way: a logging bug that crashed the renderer, Proton's 32-bit OpenVR bridge aborting on the HUD, and SteamVR's fallback overlay paths leaking or freezing. A proxy <code>openvr_api.dll</code> and a small native ARM64 overlay helper solve the last two. The HUD, menus and intro videos now show in the headset without flicker.</p>
+  <dl class="facts">
+    <dt>Mod</dt><dd>github.com/fholger/farcry_vrmod 1.1.0 (CryVR: Mods/CryVR, d3d9.dll DXVK 2.2 fork, DSOAL dsound.dll, OpenVR input)</dd>
+    <dt>Base game</dt><dd>Far Cry (Steam 13520), 32-bit; the mod's files go into the real Steam game folder</dd>
+    <dt>Install</dt><dd>~/PCVR/FarCryVR (dl, fc_*.sh/py, ovrshim/ with ovrshim.c, hudbridge.cpp and their build scripts)</dd>
+    <dt>Steam entry</dt><dd>"Far Cry VR" 2151742621 = <code>steam -applaunch 13520 -frame-vr</code>; Far Cry itself still launches flat. Red FAR CRY VR art</dd>
+    <dt>Set up</dt><dd>2026-10-23; controls on the <a href="#controls">standard layout</a> with left bumper jump and left trigger crouch</dd>
+  </dl>
+</header>
+
+<h2>Install and launch</h2>
+<p>The NSIS installer found the prefix's empty stub Steam folder instead of the real game, so its files were moved into <code>steamapps/common/FarCry</code>. Microsoft's x86 C++ runtime goes next to <code>Bin32\FarCry.exe</code>. The Steam copy quits when started from a shortcut, so "Far Cry VR" launches app 13520 with <code>-frame-vr</code>. The <code>farcry</code> case of <code>flatvr-launch.sh</code> then forces the mod's DLLs native, starts the helper and adds <code>-MOD:CryVR</code>. The first start asks for OK in two configuration dialogs, which you click in theater mode.</p>
+
+<h2>Making it run</h2>
+<ol>
+<li><strong>Renderer crash.</strong> The DXVK fork's Wine debug logging corrupts a register in this MSVC build, so the Vulkan loader pointer turns into a module handle. <code>DXVK_LOG_LEVEL=none</code> avoids the logging path.</li>
+<li><strong>HUD crash.</strong> Proton's 32-bit OpenVR bridge asserts on any overlay given a Vulkan texture (<code>vroverlay_manual.c:465</code>), and CryVR draws its HUD and menus that way. A 32-bit proxy <code>openvr_api.dll</code> (ovrshim, built on the Frame with clang and lld-link) intercepts that call. It copies the HUD off the GPU asynchronously, scaled to 1024 pixels, and only when it changes. The mod's own library sits beside it as <code>openvr_api_real.dll</code>.</li>
+<li><strong>Getting pixels into SteamVR.</strong> SteamVR's raw-pixel overlay path stops for good after about 460 updates. Its from-file path shows only the first image per file name, and new names leak about 5 MB each in the compositor until SteamVR restarts. The fix is <em>hudbridge</em>, a native ARM64 OpenVR overlay app. ovrshim writes each frame into a shared file in <code>/tmp</code>, and hudbridge uploads it to its own Vulkan images and hands them over with <code>SetOverlayTexture</code>, the path native apps use. SteamVR won't let one process texture another's overlay, so hudbridge draws a mirror panel. It copies the game panel's position, size, visibility and curvature about 80 times a second and sits just above it. The game panel keeps one transparent pixel, so the laser pointer still clicks the menus. Memory stays flat, and the helper exits with the game.</li>
+</ol>
+
+<h2>Controls</h2>
+<p>A Frame binding is written into the mod's <code>steamvr</code> folder and selected for the game in SteamVR's settings.</p>
+<p>Right: trigger fire, bumper use, A grenades, B reload, X binoculars, menu pause, stick left/right turn, up next weapon and zoom in, down zoom out. Left: trigger crouch, bumper jump, stick move, stick click sprint. Grips at 80% grab. In vehicles, the left trigger leaves, A reloads, B changes seat, X toggles lights and the left stick click changes view.</p>
+<p>If only the right hand responds, the left controller isn't connected; SteamVR then logs input for the right hand only.</p>
+<pre><code>ssh frame "bash ~/PCVR/FarCryVR/fc_bridgetest.sh 60 keep"   # launch with a free-memory watchdog; shim + hudbridge summary</code></pre>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 2151742621"
+# then clear Far Cry's launch options, delete the files in ~/PCVR/FarCryVR/mod-files.txt from the game folder
+# (restore Bin32\d3d9.dll.orig if present), restore actions.json.orig and the .orig-farcry vrsettings backup</code></pre>
 </article>
 
 <!-- ===================== TRIBES 2 VR ===================== -->

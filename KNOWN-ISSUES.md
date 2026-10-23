@@ -53,6 +53,12 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix fails its Steam init (`Steam failed to initialize` in Hollow Knight VR, `[Fatal] Stage 2 Boot Failure: Steamworks is not initialized` in Circuit Superstars VR) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
 
+### Overlay fallback paths: SetOverlayRaw dies, SetOverlayFromFile leaks, no cross-process textures
+
+- **Observed (Far Cry VR):** `IVROverlay::SetOverlayRaw` stops working for good after about 460 updates (error 23). `SetOverlayFromFile` shows only the first image per path, and each new path leaks about 4.7 MB in `vrcompositor` that is never freed until SteamVR restarts. One process cannot set the texture of another process's overlay (error 12).
+- **Workaround:** a native helper process that draws a mirror overlay of its own, copying the game overlay's transform, size, visibility, sort order, bounds, alpha and curvature at about 80 Hz, and feeds it with `SetOverlayTexture` from frames the game writes to a shared file ([tools/far-cry-ovrshim](tools/far-cry-ovrshim/)).
+- **Who:** Valve (SteamVR overlay raw and file paths).
+
 ### Per-eye XrCompositionLayerQuad pairs are rejected
 
 - **Observed:** a Proton OpenXR game that submits its 2D panel as two quad layers, `eyeVisibility` LEFT and RIGHT, the right one from slice 1 of an `arraySize=2` swapchain (Unreal Revived VR's menu and HUD), has every such `xrEndFrame` rejected by SteamVR on the Frame: `compositor failed EndFrame()`, `XR_ERROR_POSE_INVALID` (-39), with a unit-length quaternion. The panel shows on the monitor and in theater mode, never in the headset.
@@ -195,10 +201,20 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** Unreal 227 leaves `System64\Running.ini` after a crash and opens a "not shut down properly" recovery dialog at the next start, invisible in VR. A launch wrapper that deletes the file first avoids it.
 
+### Wine debug logging inside a custom DXVK build can corrupt registers
+
+- **Observed:** fholger's DXVK fork for Far Cry VR crashed at device creation under Proton: its Wine debug-output logging (`__wine_dbg_output`) clobbers ESI in that MSVC build, so `vkGetInstanceProcAddr` became a module handle. `DXVK_LOG_LEVEL=none` avoids the logging path. Noted because the symptom looks like a Frame or FEX problem and is not one.
+
 ### Mods that patch Direct3D in memory need x86-64 DXVK
 
 - **Observed:** a VR mod using MinHook to patch `d3d11.dll` crashes with exception `C000001D` (illegal instruction): Proton ARM64's DXVK is a native ARM64 library and the mod writes x86-64 trampolines into it (Halo MCC VR).
 - **Workaround:** copy Proton's x86-64 DXVK (`dxgi.dll`, `d3d11.dll`, `d3d10core.dll`) beside the game exe.
+
+### Proton's 32-bit vrclient asserts on Vulkan overlay textures
+
+- **Observed:** a 32-bit OpenVR game that gives `IVROverlay::SetOverlayTexture` a Vulkan texture (Far Cry VR's CryVR, whose DXVK fork draws the HUD and menus on overlays) is aborted by Proton's i386 vrclient bridge: `vroverlay_manual.c:465 !status`. Eye textures submit fine; only the overlay path asserts.
+- **Workaround:** a proxy `openvr_api.dll` that intercepts the call, reads the image back asynchronously and hands it to a native helper ([tools/far-cry-ovrshim](tools/far-cry-ovrshim/)).
+- **Who:** Valve (Proton's vrclient, i386 overlay texture conversion).
 
 ### 32-bit OpenXR works through the i386 wineopenxr
 

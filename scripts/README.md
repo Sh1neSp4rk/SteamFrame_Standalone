@@ -14,11 +14,11 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [apply_art.py](common/apply_art.py) | Applies `<id>p.png`, `<id>.png`, `<id>_hero.png`, `<id>_logo.png` as a game's library art without restarting Steam. |
 | [art_inventory.py](common/art_inventory.py) | Lists shortcuts and Steam apps with launch options, and which library art is cached for each. |
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
-| [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. |
+| [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. Per-game cases set the mod's overrides; the `farcry` case also starts hudbridge. |
 | [flatvr_setup.sh](common/flatvr_setup.sh) | Applies that split to DUSK, Left 4 Dead 2, Portal 2 and Bendy. |
 | [vr_audit2.py](common/vr_audit2.py) | Audits every VR shortcut for how it depends on a Steam game install: path reference, symlink, hard link, or the game's Proton prefix (which Steam deletes on uninstall). |
 
-The OpenXR API layer for Proton games (per-eye quad layers, single interaction profile) lives in [tools/frame-quadfix](../tools/frame-quadfix/).
+The OpenXR API layer for Proton games (per-eye quad layers, single interaction profile) lives in [tools/frame-quadfix](../tools/frame-quadfix/); the proxy `openvr_api.dll` and native overlay helper for 32-bit OpenVR games in [tools/far-cry-ovrshim](../tools/far-cry-ovrshim/).
 
 ## Per game
 
@@ -140,6 +140,16 @@ The framepad DLL pair, the uinput pad and the Mono.Cecil stripping tool are desc
 | [cs_frame_controls.py](circuit-superstars-vr/cs_frame_controls.py) | Writes the SteamVR binding (the game's Xbox layout 1:1) and selects it for both app keys. |
 | [FrameVR_CS.cs](circuit-superstars-vr/FrameVR_CS.cs) | BepInEx plugin source: copies the mod's SteamVR actions onto a virtual Xbox pad every frame. Build with the .NET Framework C# compiler. |
 | [cs_launch.sh](circuit-superstars-vr/cs_launch.sh) | Launch through Steam with a log summary. |
+
+### far-cry-vr ([games/far-cry-vr](../games/far-cry-vr/))
+
+| Script | What it does |
+|---|---|
+| [fc_frame_controls.py](far-cry-vr/fc_frame_controls.py) | Writes the Frame binding into the mod's `steamvr` folder, adds the `frame_controller` default to `actions.json`, selects it in `steamvr.vrsettings` (layout in its docstring). |
+| [fc_bridgetest.sh](far-cry-vr/fc_bridgetest.sh) | Launches the VR shortcut with a free-memory watchdog and reports the shim and hudbridge. |
+| [mod-files.txt](far-cry-vr/mod-files.txt) | The files the mod installer adds to the game folder, for the undo step. |
+
+The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshim](../tools/far-cry-ovrshim/).
 
 ### unreal-revived-vr ([games/unreal-revived-vr](../games/unreal-revived-vr/))
 

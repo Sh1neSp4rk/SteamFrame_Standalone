@@ -36,5 +36,17 @@ case "$game" in
   bendy)  # VR: BepInEx (winhttp proxy) loads BendyVR; flat: Wine's builtin winhttp, no BepInEx
     [ $vr = 1 ] && export WINEDLLOVERRIDES="winhttp=n,b"
     exec "${args[@]}" ;;
+  farcry)  # VR: what the mod's FarCryVR.exe does (Bin32\FarCry.exe -MOD:CryVR + DXVK env) with its own d3d9.dll (DXVK
+           # fork that starts OpenVR) and dsound.dll (DSOAL) forced native; flat: Proton's builtin d3d9/dsound, no mod
+    if [ $vr = 1 ]; then
+      export DXVK_LOG_LEVEL=none DXVK_ASYNC=0 DXVK_GPLASYNCCACHE=0 DXVK_STARTOPENVR=1 WINEDLLOVERRIDES="d3d9=n,b;dsound=n,b;msvcp140=n,b;vcruntime140=n,b;concrt140=n,b"
+      [ -f "$HOME/PCVR/FarCryVR/env.test" ] && source "$HOME/PCVR/FarCryVR/env.test"
+      [ -e "$HOME/PCVR/FarCryVR/debug" ] && export PROTON_LOG=1 PROTON_LOG_DIR="$HOME/PCVR/FarCryVR/logs" WINEDEBUG="${WINEDEBUG:-+loaddll}"
+      # HUD/menu overlays: ovrshim hands frames to this native helper (Proton's 32-bit OpenVR bridge can't)
+    rm -f /tmp/farcryvr_bridge_*.shm /tmp/farcryvr_hud_*.bmp
+    "$HOME/PCVR/FarCryVR/ovrshim/hudbridge" $$ > "$HOME/PCVR/FarCryVR/hudbridge.log" 2>&1 &
+    exec "${args[@]}" -MOD:CryVR
+    fi
+    exec "${args[@]}" ;;
   *) echo "unknown game $game" >> "$LOG"; exec "${args[@]}" ;;
 esac
