@@ -1,0 +1,22 @@
+# Never commit game data, mod archives or built binaries
+*.wad
+*.WAD
+*.pk3
+*.ipk3
+*.pak
+*.PAK
+*.zip
+*.7z
+*.rar
+*.exe
+*.dll
+*.so
+*.so.*
+*.bin
+*.log
+# Steam artwork sources and output
+scripts/common/src/
+scripts/common/out/
+# OS noise
+.DS_Store
+Thumbs.db
