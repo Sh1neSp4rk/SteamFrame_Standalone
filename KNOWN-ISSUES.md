@@ -52,6 +52,11 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix fails its Steam init (`Steam failed to initialize` in Hollow Knight VR, `[Fatal] Stage 2 Boot Failure: Steamworks is not initialized` in Circuit Superstars VR) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
 
+### Identical full-bounds images to both eyes do not fuse on the Frame
+
+- **Observed:** a mod that presents a 2D screen by submitting the same image to both eyes at full texture bounds (Tribes 2 VR's shell: "no eye crop available - submitting full bounds, image will double") shows doubled menus. The Frame's per-eye projections are wide and mirror-asymmetric: raw tangents left -1.65, right 1.22, top -1.73, bottom 1.17. The same pixel sits at a different angle in each eye, so a shared image can never line up.
+- **Workaround for mod authors:** crop each eye from the submitted image using the `GetProjectionRaw` tangents, or render the screen quad per eye with the headset projection, or put 2D screens on an overlay. Headsets with symmetric lenses hide this bug.
+
 ### SteamVR blanks the world below about 20 fps
 
 - **Observed:** a scene application rendering slower than roughly 20 fps shows a black world while its own menu panels and overlays stay visible and audio keeps playing. It looks like a rendering bug and is a frame-rate problem. Quake VR: Unleashed at 1728x1728 per eye (39 ms a frame) is the reference case.
@@ -181,13 +186,21 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed:** EAC's Wine module (`easyanticheat_wine_x64.eac`) is only served for games whose publisher enabled Linux support; without it the game treats anti-cheat as missing and exits quietly (Dragon Ball FighterZ). Games with EAC integrity certificates fail their own startup check ten seconds in with a stubbed `NtRaiseHardError` (Breachers). Proton's EAC runtime does not engage under ARM64 Proton either way.
 - **Who:** publishers; Epic.
 
+### TribesNext's Ruby login helper page-faults under FEX
+
+- **Observed:** TribesNext RC2a authenticates Tribes 2 through `rubyintersect.dll` and `msvcrt-ruby190.dll`. Under FEX the Ruby runtime page-faults, the TribesNext scripts then report an unpatched exe, and no account can log in. `-nologin` gives the offline shell only. The TribesNext 20250922 preview (native authentication, advertised Wine support) is untried.
+
+### No readable depth under zink for depth-stereo mods
+
+- **Observed:** a mod mode that reconstructs stereo from the depth buffer (Tribes 2 VR's `stereoMode 2`) finds no usable depth from this OpenGL 1.x-era engine under zink. Per-eye rendering modes are the only option.
+
 ### No .NET or Wine Mono in the Proton prefix
 
 - **Observed:** a .NET Framework launcher dies at once with `err:mscoree:load_mono Could not load Mono into this process` (Breachers). UEVR needed the .NET 6 Desktop runtime installed per prefix.
 
 ### Steam strips backslashes from launch options
 
-- **Observed:** a Windows path in Launch Options loses its backslashes. Anything that needs one (`PROTON_REMOTE_DEBUG_CMD`, DLL overrides with paths) has to go through a wrapper script: `/home/steamos/script %command%`.
+- **Observed:** a Windows path in Launch Options loses its backslashes, in a game's launch options and in a non-Steam shortcut's (Tribes 2 VR's launcher received `C:DynamixTribes2GameDataTribes2.exe`). Anything that needs one (`PROTON_REMOTE_DEBUG_CMD`, DLL overrides with paths, an exe path argument) has to go through a wrapper script that adds it: `/home/steamos/script %command%`.
 
 ### Steam's launch prompts do not show in the headset
 

@@ -154,6 +154,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#hlvr" data-guide="hlvr"><span class="dot dead"></span>Half-Life: VR Mod (HL1)</a>
   <a href="#uevr" data-guide="uevr"><span class="dot dead"></span>UEVR injector</a>
   <a href="#titanfall" data-guide="titanfall"><span class="dot dead"></span>Titanfall 2 VR</a>
+  <a href="#tribes2" data-guide="tribes2"><span class="dot dead"></span>Tribes 2 VR</a>
 </nav>
 
 <main>
@@ -2090,6 +2091,36 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
 <h2>Undo</h2>
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3624666961"
 # to remove the mod: delete BepInEx/, winhttp.dll, doorstop_config.ini, steam_appid.txt, xinput*.dll and the Managed/StreamingAssets files it added (list in extracted/), or verify files in Steam</code></pre>
+</article>
+
+<!-- ===================== TRIBES 2 VR ===================== -->
+<article id="tribes2" class="guide" data-title="Tribes 2 VR" hidden>
+<header class="g-head">
+  <span class="status dead">Dead end</span>
+  <h1>Tribes 2 VR: the mod runs, but its menus can't fuse on the Frame</h1>
+  <p class="lede">Bruhlitz's Tribes2VRmod (a QOL-24 test build uploaded 2026-10-09) is a 32-bit DLL injected into the free Tribes 2. Under Proton it did everything its log asks for: OpenVR up at 72 fps, every engine hook verified, legacy controller input alive, arm IK installed. Two things stopped it on this headset, one in TribesNext and one in how the mod presents 2D screens to wide, asymmetric lenses. Uninstalled the same day; documented for whoever tries next.</p>
+  <dl class="facts">
+    <dt>Mod</dt><dd>github.com/Bruhlitz/Tribes2VRmod, folder tribes2vr-QOL-24 (tribes2vr.dll, tribes2vr.ini, tribes2vr_launcher.exe), MinGW, OpenVR legacy input, OpenGL hooks on wglSwapBuffers + exe patches</dd>
+    <dt>Game</dt><dd>Tribes 2 25034 (free: tribes2gsi.exe from TribesNext, a Wise installer with no silent switch) + TribesNext RC2a</dd>
+    <dt>Tried</dt><dd>2026-10-23 in a shortcut-only Proton Experimental prefix; everything removed again, scripts kept</dd>
+  </dl>
+</header>
+
+<h2>What worked</h2>
+<ul>
+<li>The mod needs <code>openvr_api.dll</code> (32-bit) next to it and doesn't ship one; the OpenVR SDK's <code>bin/win32</code> copy works through Proton's vrclient.</li>
+<li>Steam strips backslashes from shortcut launch options, so the launcher's <code>C:\...\Tribes2.exe</code> argument arrived as <code>C:DynamixTribes2GameDataTribes2.exe</code>. The wrapper appends the argument itself, and the launcher forwards extra arguments such as <code>-nologin</code> to the game.</li>
+<li>The mod's byte-signature checks passed against the TribesNext RC2a-patched exe: camera, frustum, arm IK and <code>Con::evaluate</code> hooks all verified.</li>
+</ul>
+
+<h2>Blocker 1: TribesNext login</h2>
+<p>RC2a authenticates through a Ruby helper (<code>rubyintersect.dll</code> + <code>msvcrt-ruby190.dll</code>). Under FEX it page-faults inside the Ruby runtime, and the TribesNext scripts then report an unpatched exe, so no account login or creation. <code>-nologin</code> reaches the offline LAN/Training shell. The newer TribesNext 20250922 preview drops Ruby for native authentication and advertises Wine support; it was the untried next step for online play, with the caveat that the mod's signatures are tied to a specific exe.</p>
+
+<h2>Blocker 2: 2D screens on asymmetric lenses</h2>
+<p>In the shell the mod submits one identical image to both eyes at full texture bounds; its own log says so: "no eye crop available - submitting full bounds, image will double". The Frame's per-eye projections are wide and mirror-asymmetric (raw tangents l −1.65, r 1.22, t −1.73, b 1.17), so the same pixel lands at a different angle in each eye and the menus never fuse, with <code>menuOverlay</code> true or false. Two more of the mod's modes are ruled out here: its default crop mode (<code>frustumMode 3</code>) needs the game to draw a 144° vertical FOV to fill the lens ("VERTICAL IS SHORT … stretched 407% taller"), and depth stereo (<code>stereoMode 2</code>) needs readable depth that this engine never leaves behind under zink. <code>frustumMode 2</code> (the headset's per-eye projection) with <code>stereoMode 1</code> was configured for the 3D world but not tested before the decision to stop. Driving the menus through the SteamVR dashboard's desktop view would have been the workaround.</p>
+
+<h2>For the author</h2>
+<p>A 2D-screen path that crops each eye from the submitted image using <code>GetProjectionRaw</code> tangents (as the crop mode already does for 3D frames, but assuming the screen's own FOV instead of a game frustum), or that renders the screen quad per eye with the headset projection, would make the shell usable on wide-FOV headsets.</p>
 </article>
 
 </main>

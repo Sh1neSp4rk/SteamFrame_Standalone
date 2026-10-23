@@ -83,6 +83,7 @@ Failure patterns seen more than once:
 | [Half-Life: VR Mod](games/half-life-vr-mod/) | Proton | Dead end, for now | Skybox assertion on Proton 11; mod VR shutdown on Experimental |
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
 | [Titanfall 2 VR](games/titanfall2-vr/) | Streamed only | Not standalone | Needs the mod's installer window on a PC |
+| [Tribes 2 VR](games/tribes2-vr/) | Proton (32-bit) | Dead end | Mod runs; TribesNext login crashes under FEX, 2D shell cannot fuse on the Frame's lenses |
 
 ## Controller layout
 
@@ -133,6 +134,6 @@ The ports and mods this repository builds on are separate projects with their ow
 - [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games
 - [emawind84/SelacoVR](https://github.com/emawind84/SelacoVR), [hh79/gzdoomvr](https://github.com/hh79/gzdoomvr) and jantyka's gzdoomvr lineage for the Doom-engine VR builds
 - [RippeR37/q3vr](https://github.com/RippeR37/q3vr), [vittorioromeo/quakevr](https://github.com/vittorioromeo/quakevr), [NPi2Loup/DOOM-3-BFG-VR](https://github.com/NPi2Loup/DOOM-3-BFG-VR), [Bassquake/Aliens-Versus-Predator-VR](https://github.com/Bassquake/Aliens-Versus-Predator-VR)
-- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), Astienth (Circuit_Superstars_VR, UnityVR_Bepinex), the Hollow Knight VR Enhanced authors, Nefarius (ViGEm client)
+- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Bruhlitz (Tribes2VRmod), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), Astienth (Circuit_Superstars_VR, UnityVR_Bepinex), the Hollow Knight VR Enhanced authors, Nefarius (ViGEm client)
 - Valve for OpenVR, SteamVR and Proton; the FEX, DXVK, Mesa (zink, Turnip) and OpenXR projects
 - saphid's Frame Control, whose Steam shortcut code [steam_shortcuts.py](scripts/common/steam_shortcuts.py) is adapted from (MIT)
