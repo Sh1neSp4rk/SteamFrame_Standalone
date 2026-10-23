@@ -53,6 +53,21 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix fails its Steam init (`Steam failed to initialize` in Hollow Knight VR, `[Fatal] Stage 2 Boot Failure: Steamworks is not initialized` in Circuit Superstars VR) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
 
+### No XR_KHR_composition_layer_cylinder
+
+- **Observed:** SteamVR's OpenXR runtime on the Frame does not offer `XR_KHR_composition_layer_cylinder`. Quest ports that draw their menus on a curved cylinder layer (Team Beef's CSVR) have to fall back to a flat `XrCompositionLayerQuad` of the arc's width at the arc's distance ([cs_port.py](scripts/counter-strike-vr/cs_port.py)).
+- **Who:** Valve (SteamVR OpenXR runtime).
+
+### A custom OpenXR binding naming an unknown action is dropped whole
+
+- **Observed:** SteamVR learns an app's actions only from the app's own suggested bindings. A custom binding file that names an action the app never suggested (a port that adds bumper, view or d-pad actions without a Touch suggestion for them) is dropped entirely: `Loading 0 bindings`, no input at all and no menu pointer.
+- **Workaround:** give every new action a suggestion in the app's own interaction profile, then regenerate SteamVR's default binding before locking the Frame binding over it ([cs_rebind.sh](scripts/counter-strike-vr/cs_rebind.sh)).
+
+### No text keyboard inside OpenXR on the Frame
+
+- **Observed:** a native OpenXR app has no system keyboard to call (the Quest builds use Android's); a game's name prompt cannot be answered in the headset (CSVR's multiplayer menu). SteamVR's own keyboard, reachable to OpenVR apps, closes itself when opened for a hidden overlay (see the AvP entry above).
+- **Workaround:** write the value from a file or the Steam persona name at launch ([cs_name.py](scripts/counter-strike-vr/cs_name.py)).
+
 ### Overlay fallback paths: SetOverlayRaw dies, SetOverlayFromFile leaks, no cross-process textures
 
 - **Observed (Far Cry VR):** `IVROverlay::SetOverlayRaw` stops working for good after about 460 updates (error 23). `SetOverlayFromFile` shows only the first image per path, and each new path leaks about 4.7 MB in `vrcompositor` that is never freed until SteamVR restarts. One process cannot set the texture of another process's overlay (error 12).
@@ -270,3 +285,5 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - `ptrace` attach is blocked for games; run the game under gdb from inside its launch wrapper instead.
 - Linux truncates process names to 15 characters (`RealRTCW.aarch6`); use `pkill -f` with the full name.
 - The headset has no Python Pillow, which several ports' setup scripts want for menu art and weapon-wheel icons; the games work without it.
+- Quest ports assume Android: an EGL/OpenGL ES session, an Android start-up hook that creates the OpenXR instance, a mobile renderer forced in VR, haptics through an Android service, files under `/sdcard`. Each needs a desktop equivalent (CSVR's port script is the template). Out-of-bounds reads that were harmless on Android can crash here (CSVR's model lookup).
+- `gitlab.xiph.org` has answered 502 for days; the libogg, opusfile and vorbis submodules are available at the same commits from the `github.com/xiph` mirrors.

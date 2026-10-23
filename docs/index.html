@@ -146,6 +146,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#circuitsuperstars" data-guide="circuitsuperstars"><span class="dot working"></span>Circuit Superstars VR</a>
   <a href="#unrealrevived" data-guide="unrealrevived"><span class="dot working"></span>Unreal Revived VR</a>
   <a href="#farcry" data-guide="farcry"><span class="dot working"></span>Far Cry VR</a>
+  <a href="#csvr" data-guide="csvr"><span class="dot working"></span>Counter-Strike VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
@@ -1378,6 +1379,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Circuit Superstars VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the FrameVR_CS virtual pad (the mod has no motion controls). Bumpers LB/RB, triggers, sticks, d-pad, menu Start (mod: double-tap first-person, hold recenter), view Back; grips unused. Confirmed 2026-10-23.</td></tr>
 <tr><td>Unreal Revived VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper alt-fire, A use item, B next item, X / left view translator, menu pause, right stick click recenter, left stick click / d-pad left previous item, d-pad up/down weapons. Right Y, d-pad right and grips unbound (12 pad buttons). Aim follows the right controller. Set through a Frame binding plus User.ini binds (see its page). Confirmed 2026-10-23.</td></tr>
 <tr><td>Far Cry VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper use, A grenades, B reload, X binoculars, menu pause, left stick click sprint, right stick left/right turn, up next weapon + zoom in, down zoom out; grips (80%) grab. Vehicles: left trigger leave, A reload, B change seat, X lights, left stick click change view. Confirmed 2026-10-23.</td></tr>
+<tr><td>Counter-Strike VR</td><td>Standard using every Frame input: right trigger fire, right bumper secondary fire, A use, B reload, X buy menu, Y drop, right grip (80%) last weapon, right stick turn/weapons, right stick click flashlight, menu; left trigger crouch, left bumper jump, left grip (80%) walk, left stick click night vision, view scoreboard, d-pad ammo / ammo / spray / team menu (tap). The engine port adds the bumper, view and d-pad actions. Confirmed 2026-10-23.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
@@ -2169,6 +2171,43 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 2151742621"
 # then clear Far Cry's launch options, delete the files in ~/PCVR/FarCryVR/mod-files.txt from the game folder
 # (restore Bin32\d3d9.dll.orig if present), restore actions.json.orig and the .orig-farcry vrsettings backup</code></pre>
+</article>
+
+<!-- ===================== COUNTER-STRIKE VR ===================== -->
+<article id="csvr" class="guide" data-title="Counter-Strike VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Counter-Strike VR: Team Beef's Quest port, built natively on the Frame</h1>
+  <p class="lede">Team Beef's CSVR runs Counter-Strike 1.6 on the open-source Xash3D FWGS engine with OpenXR, motion-controlled weapons and offline bots. It is released only for Quest and Pico, but the source is public, and its VR layer is the same Team Beef design that already ported cleanly for Quake. Built natively for the Frame's ARM64 Linux, it talks to SteamVR's OpenXR runtime directly: no Proton, no FEX. It uses your Steam copy of Counter-Strike.</p>
+  <dl class="facts">
+    <dt>Source</dt><dd>github.com/Team-Beef-Studios/CSVR (main 2eab9ff) with its submodules: Team Beef's xash3d-fwgs fork, mainui_cpp, ReGameDLL_CS, YaPB bots</dd>
+    <dt>Game data</dt><dd>Counter-Strike (Steam app 10), hard-linked from the Half-Life folder, so it takes no extra space and survives an uninstall</dd>
+    <dt>Install</dt><dd>~/PCVR/CSVR (src, cs_*.sh/py build and setup scripts) · ~/PCVR/CSVR/game (playable)</dd>
+    <dt>Steam entry</dt><dd>"Counter-Strike VR" 3307658986, native, red COUNTER-STRIKE VR art</dd>
+    <dt>Set up</dt><dd>2026-10-23; controls on the <a href="#controls">standard layout</a> using every Frame input, confirmed the same day</dd>
+  </dl>
+</header>
+
+<h2>Porting the engine</h2>
+<p>The engine's VR code sits in one folder and only a few places assume Android. The patch script swaps those for desktop equivalents:</p>
+<ol>
+<li><strong>Graphics binding.</strong> The OpenGL ES and EGL session setup becomes desktop OpenGL with a GLX binding to SDL's X11 window, as in the Quake port. The engine requests OpenXR 1.0 (SteamVR's version) and creates the instance on first use, since there is no Android start-up hook.</li>
+<li><strong>Renderer.</strong> VR forced the mobile GLES renderer; a failed load opens a blocking warning box. It now loads the desktop GL renderer. That renderer swaps the window once per eye, so the desktop swap is skipped.</li>
+<li><strong>Menu panel.</strong> Menus are drawn on a curved cylinder layer, which SteamVR does not support. They now go on one flat quad of the same size and distance, shown to both eyes.</li>
+<li><strong>A latent crash.</strong> The engine's model lookup read one entry past the end of its table. On Android the next value happened to be zero; here it was 2, and the client crashed on load.</li>
+<li><strong>Small things.</strong> The Android haptics service is stubbed (controller rumble still works), GCC 15 needs <code>-std=gnu17</code>, the client needed its C++ headers ahead of its <code>min</code>/<code>max</code> macros, and the weapon calibration file moved from <code>/sdcard</code> into the game folder. Xiph's GitLab was down, so three audio libraries came from Xiph's GitHub mirrors at the same commits.</li>
+</ol>
+
+<h2>Controls</h2>
+<p>The game's OpenXR actions follow the Touch controller, which has no bumpers, view button or d-pad. The port adds those as new actions with their own console variables. Each new action also gets a Touch suggestion, because SteamVR only learns actions from the game's suggestions and drops a whole binding file that names an unknown one (the symptom: no input and no menu pointer). A Frame binding then replaces SteamVR's generated Touch default and is made read-only. <code>frame_controls.cfg</code> sets what each button does at every launch.</p>
+<p>Right: trigger fire (and menu click), bumper secondary fire, A use, B reload, X buy menu, Y drop, grip (80%) last weapon, stick left/right snap turn and up/down weapons, stick click flashlight, menu button = menu. Left: trigger crouch, bumper jump, grip (80%) walk, stick move, stick click night vision, view = scoreboard, d-pad up/down primary/secondary ammo, left spray, right team menu. Tap the d-pad: the Frame repeats a held d-pad.</p>
+<p>There is no text keyboard inside OpenXR on the Frame, so the multiplayer menu's name prompt could not be answered. The launcher writes the player name at every start, from <code>cstrike/frame_name.txt</code> or else your Steam name.</p>
+<pre><code>ssh frame "bash ~/PCVR/CSVR/cs_launch.sh 40 keep"   # launch through Steam and summarise the logs
+ssh frame "bash ~/PCVR/CSVR/cs_rebind.sh"           # after engine changes that add actions</code></pre>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3307658986; rm -rf ~/PCVR/CSVR"
+# then remove steam.app.3307658986_* from ~/.config/openvr/config/openxr (chmod 644 first)</code></pre>
 </article>
 
 <!-- ===================== TRIBES 2 VR ===================== -->

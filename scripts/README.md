@@ -99,6 +99,18 @@ The OpenXR API layer for Proton games (per-eye quad layers, single interaction p
 | [selaco_native_setup.sh](selaco-vr/selaco_native_setup.sh) | Assembles the game folder and writes the run script. |
 | [selaco_binding.py](selaco-vr/selaco_binding.py) | Writes the legacy-input binding and the `frame.cfg` the launcher execs (layout table in its docstring). |
 
+### counter-strike-vr ([games/counter-strike-vr](../games/counter-strike-vr/))
+
+| Script | What it does |
+|---|---|
+| [cs_port.py](counter-strike-vr/cs_port.py) | **GPL.** Idempotent engine patches for Team Beef's xash3d-fwgs fork: GLX OpenXR binding, desktop GL renderer, menu quad instead of a cylinder, the model-lookup crash, bumper/view/d-pad actions with Touch suggestions. |
+| [cs_port_client.py](counter-strike-vr/cs_port_client.py) | **GPL.** Client fixes: header order, calibration file path. |
+| [cs_build_engine.sh](counter-strike-vr/cs_build_engine.sh), [cs_build_game.sh](counter-strike-vr/cs_build_game.sh) | waf build of the engine; CMake/Ninja build of the client, menu, ReGameDLL and YaPB. |
+| [cs_subfix.sh](counter-strike-vr/cs_subfix.sh), [cs_sub2.sh](counter-strike-vr/cs_sub2.sh), [cs_xiph.sh](counter-strike-vr/cs_xiph.sh) | Fetch the nested submodules at their pinned commits; the Xiph libraries from the GitHub mirrors. |
+| [cs_setup.sh](counter-strike-vr/cs_setup.sh) | Hard-links Steam's Counter-Strike into the game folder, copies CSVR's VR assets over the links, adds the shortcut. |
+| [cs_controls.py](counter-strike-vr/cs_controls.py), [cs_name.py](counter-strike-vr/cs_name.py) | The Frame binding over the read-only Touch default plus `frame_controls.cfg`; the player name file. |
+| [cs_rebind.sh](counter-strike-vr/cs_rebind.sh), [cs_launch.sh](counter-strike-vr/cs_launch.sh), [cs_state.sh](counter-strike-vr/cs_state.sh) | Regenerate and lock the binding after engine changes; launch with a log summary; status. |
+
 ### avp-vr ([games/avp-vr](../games/avp-vr/))
 
 | Script | What it does |
