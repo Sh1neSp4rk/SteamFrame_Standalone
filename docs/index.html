@@ -109,7 +109,7 @@ summary { cursor: pointer; font-weight: 500; }
 <header class="top">
   <h1 class="brand">Frame Standalone Guides</h1>
   <p class="tagline">Why PC games stall when you run them directly on the Steam Frame, the fixes that worked on one headset, and the ports built on it. Pick a game on the left. Every script and patch named here is in the <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">SteamFrame_Standalone</a> repository.</p>
-  <div class="meta"><span>Updated 2026-10-22</span><span>SteamOS 0.4.5 Â· SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) Â· Proton Experimental (ARM64) Â· native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
+  <div class="meta"><span>Updated 2026-10-23</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
 </header>
 
 <div class="layout">
@@ -141,6 +141,8 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#rtcw" data-guide="rtcw"><span class="dot working"></span>Return to Castle Wolfenstein VR</a>
   <a href="#doom3" data-guide="doom3"><span class="dot working"></span>Doom 3 BFG VR</a>
   <a href="#selaco" data-guide="selaco"><span class="dot working"></span>Selaco VR</a>
+  <a href="#redfaction" data-guide="redfaction"><span class="dot working"></span>Red Faction VR</a>
+  <a href="#hollowknight" data-guide="hollowknight"><span class="dot working"></span>Hollow Knight VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
@@ -166,14 +168,14 @@ summary { cursor: pointer; font-weight: 500; }
 <h2>The chain</h2>
 <p>A Frame-native game from the Steam store is an Android APK (Red Matter, Pavlov Shack, Pistol Whip and so on ship this way). Everything else is the Windows x86-64 build, started like this:</p>
 <pre><code>Steam client (ARM64)
-  â†’ steam-launch-wrapper â†’ reaper
-    â†’ Steam Linux Runtime 4 (pressure-vessel container)
-      â†’ FEX  (translates x86-64 code to ARM64 on the fly)
-        â†’ Proton 11.0 (ARM64) or Proton Experimental (ARM64)
-          â†’ Wine, with DXVK turning Direct3D into Vulkan on the Adreno 750 (Turnip driver)
-            â†’ the game's Windows .exe
-VR:  OpenVR games  â†’ Proton's vrclient bridge â†’ SteamVR on the headset
-     OpenXR games  â†’ wineopenxr â†’ SteamVR's OpenXR runtime</code></pre>
+  → steam-launch-wrapper → reaper
+    → Steam Linux Runtime 4 (pressure-vessel container)
+      → FEX  (translates x86-64 code to ARM64 on the fly)
+        → Proton 11.0 (ARM64) or Proton Experimental (ARM64)
+          → Wine, with DXVK turning Direct3D into Vulkan on the Adreno 750 (Turnip driver)
+            → the game's Windows .exe
+VR:  OpenVR games  → Proton's vrclient bridge → SteamVR on the headset
+     OpenXR games  → wineopenxr → SteamVR's OpenXR runtime</code></pre>
 <p>Since 2026-10-20 there is a fifth path: ports whose source is public are compiled on the headset itself and talk to SteamVR's ARM64 OpenXR or OpenVR libraries directly, with no container, FEX or Proton in between. That is the <a href="#native">Native ARM64 builds</a> page.</p>
 <p>Logs for each layer land in <code>~/.local/share/Steam/logs</code> on the headset. The game's "C: drive" is a Proton prefix at <code>~/.local/share/Steam/steamapps/compatdata/&lt;appid&gt;/pfx</code>.</p>
 
@@ -199,8 +201,8 @@ VR:  OpenVR games  â†’ Proton's vrclient bridge â†’ SteamVR on the hea
 <h2>What every fix here has in common</h2>
 <ul>
 <li><strong>Nothing outside your home folder changes.</strong> SteamOS stays read-only; the fixes are launch options, small scripts in <code>/home/steamos</code>, or files inside a game folder or its prefix. Each guide ends with how to undo it.</li>
-<li><strong>You need SSH to the headset.</strong> Turn on Developer Mode (Steam Settings â†’ System â†’ Enable Developer Mode), set a user password in the new Developer section, then from a PC run <code>ssh steamos@frame.local</code>. The <a href="#toolbox">Toolbox</a> page has the rest.</li>
-<li><strong>Launch options are the main lever.</strong> On the headset: Library â†’ game â†’ Properties â†’ Launch Options. <code>%command%</code> stands for the whole launch command Steam would have run.</li>
+<li><strong>You need SSH to the headset.</strong> Turn on Developer Mode (Steam Settings → System → Enable Developer Mode), set a user password in the new Developer section, then from a PC run <code>ssh steamos@frame.local</code>. The <a href="#toolbox">Toolbox</a> page has the rest.</li>
+<li><strong>Launch options are the main lever.</strong> On the headset: Library → game → Properties → Launch Options. <code>%command%</code> stands for the whole launch command Steam would have run.</li>
 <li><strong>Wrapper scripts, not inline tricks.</strong> Steam strips backslashes from launch options and several fixes need to swap the executable Steam starts. So the pattern is a tiny bash script in the home folder that receives the full command as arguments, edits one of them, and runs the result:</li>
 </ul>
 <pre><code>#!/bin/bash
@@ -232,8 +234,8 @@ exec "${a[@]}"                 # run the edited command</code></pre>
 
 <h2>Get in</h2>
 <ol>
-<li>On the Frame: Steam Settings â†’ System â†’ Enable Developer Mode. A Developer section appears; at its bottom choose Set User Password.</li>
-<li>On Windows, in PowerShell: <code>ssh steamos@frame.local</code>. Type <code>yes</code> the first time, then the password. If <code>frame.local</code> does not resolve, use the IP from Settings â†’ Internet.</li>
+<li>On the Frame: Steam Settings → System → Enable Developer Mode. A Developer section appears; at its bottom choose Set User Password.</li>
+<li>On Windows, in PowerShell: <code>ssh steamos@frame.local</code>. Type <code>yes</code> the first time, then the password. If <code>frame.local</code> does not resolve, use the IP from Settings → Internet.</li>
 <li>Optional, saves typing the password: <code>ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\frame_ed25519 -N ""</code>, append the <code>.pub</code> to <code>~/.ssh/authorized_keys</code> on the Frame, and add a <code>Host frame</code> block to <code>~/.ssh/config</code>. This headset is set up that way, so the guides write <code>ssh frame</code>.</li>
 </ol>
 <div class="note warn">Developer Mode exposes SSH and ADB to everyone on your network. Turn it off when you are done for the day.</div>
@@ -314,7 +316,7 @@ ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py stop 3173477041"</code></pre>
   <h1>Contractors VR</h1>
   <p class="lede">The Steam build is Windows only, and the file Steam launches is not the game. It is Unreal's prerequisite checker, and on the Frame it stops on a dialog you cannot see.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>963930 Â· 24 GB</dd>
+    <dt>Steam app</dt><dd>963930 · 24 GB</dd>
     <dt>Engine</dt><dd>Unreal 4.22, OpenVR (SteamVR plugin)</dd>
     <dt>Compat tool</dt><dd>Proton 11.0 (ARM64), Steam's default</dd>
     <dt>Fix</dt><dd>wrapper script + launch option</dd>
@@ -362,16 +364,16 @@ for i in "${!a[@]}"; do
 done
 exec "${a[@]}"</code></pre>
 From a PC, after saving it as <code>contractors</code>: <code>scp contractors steamos@frame.local:~/ &amp;&amp; ssh steamos@frame.local chmod 755 contractors</code></li>
-<li>In the headset's library: Contractors VR â†’ Properties â†’ Launch Options:
+<li>In the headset's library: Contractors VR → Properties → Launch Options:
 <pre><code>/home/steamos/contractors %command%</code></pre></li>
 <li>Launch. The game's own <code>-hmd=steamvr</code> argument is kept, so it comes up in VR as before.</li>
 </ol>
 
 <h2>Check it worked</h2>
 <pre><code>ssh frame "ls ~/.local/share/Steam/logs | grep Contractors"
-# vrclient_Contractors_UE4_22_Steam-Win64-Shipping.txt   â† the real exe talked to SteamVR
+# vrclient_Contractors_UE4_22_Steam-Win64-Shipping.txt   ← the real exe talked to SteamVR
 ssh frame "grep -c 'Created remote Vulkan image' ~/.local/share/Steam/logs/vrclient_Contractors_UE4_22_Steam-Win64-Shipping.txt"
-# 6 â†’ three 1728x1728 textures per eye were handed to the compositor</code></pre>
+# 6 → three 1728x1728 textures per eye were handed to the compositor</code></pre>
 <p>The game also creates <code>Saved/Config</code>, <code>Saved/Logs</code> and <code>Saved/SaveGames</code> under <code>compatdata/963930/pfx/drive_c/users/steamuser/AppData/Local/Contractors_UE4_22/</code>. On the verified run it registered as the SteamVR scene application within 10 seconds of launch and ran until stopped.</p>
 
 <h2>Caveats</h2>
@@ -394,7 +396,7 @@ ssh frame "grep -c 'Created remote Vulkan image' ~/.local/share/Steam/logs/vrcli
   <h1>Halo: The Master Chief Collection, flat and with the VR mod</h1>
   <p class="lede">Two separate problems: Steam's install script wrecked the Proton prefix, and the VR mod's hooks cannot patch ARM64 code. Both were fixed without touching SteamOS, and the two Steam launch entries now mean flat and VR.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>976730 Â· 97 GB</dd>
+    <dt>Steam app</dt><dd>976730 · 97 GB</dd>
     <dt>Compat tool</dt><dd>Proton Experimental (ARM64), Steam's default for this app</dd>
     <dt>VR mod</dt><dd>MCCVR 0.5.1 (github.com/moistman42069/MCCVR-Halo-Build)</dd>
     <dt>Fix</dt><dd>prefix repair + wrapper + x86-64 DXVK beside the exe</dd>
@@ -600,7 +602,7 @@ scp C:\Windows\System32\mfc140u.dll steamos@frame.local:/run/media/steamos/Exter
   <h1>Snapshot VR</h1>
   <p class="lede">The game starts as a flat window because its Unity build asks SteamVR for one OpenXR extension without the companion extension the spec requires, and the Frame's SteamVR refuses. A 70 KB OpenXR layer in the home folder adds the missing name and the game runs in VR.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>1133580 Â· v2.18.2</dd>
+    <dt>Steam app</dt><dd>1133580 · v2.18.2</dd>
     <dt>Engine</dt><dd>Unity 2022.3, Unity OpenXR plugin 1.14.3</dd>
     <dt>Compat tool</dt><dd>Proton 11.0 (ARM64)</dd>
     <dt>Fix</dt><dd>implicit OpenXR API layer (~/.local/share/openxr)</dd>
@@ -954,7 +956,7 @@ rm -r ~/.local/share/xr_fovfix</code></pre>
     <dt>Engine</dt><dd>gzdoomvr 4.13.2.2 (github.com/hh79/gzdoomvr), OpenVR, OpenGL</dd>
     <dt>Install</dt><dd>~/PCVR/GZDoomVR/ (gzdoomvr.exe + openvr_api.dll + WADs/pk3s)</dd>
     <dt>Compat tool</dt><dd>Proton Experimental (ARM64), set per shortcut</dd>
-    <dt>Steam entries</dt><dd>Doom VR 3408293163 Â· Brutal Doom VR 3506065631 Â· MyHouse VR 4235418420 Â· Doom VR (Gun Bonsai) 3284308812</dd>
+    <dt>Steam entries</dt><dd>Doom VR 3408293163 · Brutal Doom VR 3506065631 · MyHouse VR 4235418420 · Doom VR (Gun Bonsai) 3284308812</dd>
     <dt>Set up</dt><dd>2026-10-05 and 2026-10-06</dd>
   </dl>
 </header>
@@ -992,7 +994,7 @@ SteamClient.Apps.SetShortcutLaunchOptions(3408293163, "-iwad DOOM2.WAD -file Wea
 <pre><code>ssh frame "grep -E 'success response from vrserver|Created remote GL texture' ~/.local/share/Steam/logs/vrclient_gzdoomvr.txt | tail -3"
 # ... Received success response from vrserver connect
 # ... Created remote GL texture ... 1728 x 1728</code></pre>
-<p>Input is the engine's legacy OpenVR input ("app appears to be using legacy input" in the vrclient log); the Frame controllers work with it. Gun Bonsai's options live under Options â†’ Full Options Menu; move its HUD with the sliders there if it is off-screen in VR.</p>
+<p>Input is the engine's legacy OpenVR input ("app appears to be using legacy input" in the vrclient log); the Frame controllers work with it. Gun Bonsai's options live under Options → Full Options Menu; move its HUD with the sliders there if it is off-screen in VR.</p>
 
 <h2>Heretic and Hexen (added 2026-10-21)</h2>
 <p>The same engine runs the other id-tech-1 games. The WADs come from the "Heretic + Hexen" rerelease (3286930, on the microSD): <code>heretic.wad</code> (SOSR 1.3), <code>hexen.wad</code> (1.1) and <code>hexdd.wad</code> (Deathkings 1.1) copied from its <code>dos/base</code> folder into <code>~/PCVR/GZDoomVR</code>. The rerelease's top-level WADs are the 2025 KEX versions; the DOS ones are what gzdoomvr 4.13 is sure to support. Script: <code>~/PCVR/bin/hh_setup.sh</code>.</p>
@@ -1021,7 +1023,7 @@ rm -rf ~/PCVR ~/.local/share/Steam/steamapps/compatdata/{3408293163,3506065631,4
   <h1>Dragon Ball FighterZ</h1>
   <p class="lede">The game starts, builds its window, then shuts itself down because its Easy Anti-Cheat client cannot find the Linux-side module that only publishers who opted into Proton support get. Nothing in the launch chain can supply it.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>678950 Â· 7 GB</dd>
+    <dt>Steam app</dt><dd>678950 · 7 GB</dd>
     <dt>Engine</dt><dd>Unreal 4 (project "RED"), Direct3D 11</dd>
     <dt>Anti-cheat</dt><dd>Easy Anti-Cheat (classic, game id 183); Valve rating "Unsupported anti-cheat configuration"</dd>
     <dt>Compat tool</dt><dd>Proton 11.0 (ARM64), Steam's default; left at default</dd>
@@ -1038,7 +1040,7 @@ rm -rf ~/PCVR ~/.local/share/Steam/steamapps/compatdata/{3408293163,3506065631,4
 <pre><code>GetFileAttributesW "S:/.../DRAGON BALL FighterZ/EasyAntiCheat/easyanticheat_x64.dll"
 Loaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"
 CreateFileW "C:\users\steamuser\AppData\Roaming\EasyAntiCheat\183\easyanticheat_wine_x64.eac"
-warn: Unable to create file ... easyanticheat_wine_x64.eac (status c0000034)   â† not found
+warn: Unable to create file ... easyanticheat_wine_x64.eac (status c0000034)   ← not found
 Unloaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"</code></pre>
 <p><code>easyanticheat_wine_x64.eac</code> is the Wine build of the EAC client. Epic's servers hand it to the launcher only for games whose publisher turned on Linux support in the EAC backend; the launcher's <code>183/loader.log</code> shows it contacting the CDN and getting nothing to download. Without it the client fails to start, and the game treats that as "anti-cheat missing": it tears down audio, closes its window about three seconds after showing it, flushes its ini files and exits normally. No dialog is shown.</p>
 <p>Things that were tried and made no difference, which is how the cause was narrowed down: windowed mode, Proton Experimental (ARM64), bypassing the launcher with a wrapper (with and without <code>-eac-nop-loaded</code>), and renaming <code>EasyAntiCheat_x64.dll</code> so the client could not load at all. The last one fails the same initialisation, so it fails the same way.</p>
@@ -1060,7 +1062,7 @@ Unloaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"</code></pre>
   <h1>Breachers</h1>
   <p class="lede">Two walls, one behind the other. Steam's launch target is a .NET launcher that cannot run under Proton on the Frame; past it, the game's own startup integrity check (part of its Easy Anti-Cheat integration) fails and the game exits ten seconds in, with or without the anti-cheat bootstrapper.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>1922010 Â· 13.4 GB on disk</dd>
+    <dt>Steam app</dt><dd>1922010 · 13.4 GB on disk</dd>
     <dt>Engine</dt><dd>Unity IL2CPP, OpenVR (<code>-xrloader OpenVR</code>)</dd>
     <dt>Anti-cheat</dt><dd>Easy Anti-Cheat (EOS) with integrity certificates; Valve's Deck test stops at "SteamOS does not support VR"</dd>
     <dt>Compat tool</dt><dd>Proton 11.0 (ARM64), Steam's default</dd>
@@ -1103,9 +1105,9 @@ Unloaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"</code></pre>
   <h1>XCOM 2: play with the gamepad scheme instead of a mouse pointer</h1>
   <p class="lede">The game runs. The controls were the problem: Steam loads a 2016 Steam Controller layout that drives a mouse pointer, so the Frame controllers never reached the game's own gamepad scheme. Switching the layout and the in-game input device fixes it.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>268500 Â· 75 GB</dd>
+    <dt>Steam app</dt><dd>268500 · 75 GB</dd>
     <dt>Symptom</dt><dd>right stick moves a pointer, triggers click, no direct ability selection</dd>
-    <dt>Fix</dt><dd>Steam Input layout â†’ Gamepad template; in game, Input Device = Controller</dd>
+    <dt>Fix</dt><dd>Steam Input layout → Gamepad template; in game, Input Device = Controller</dd>
     <dt>Worked out</dt><dd>2026-10-08, confirmed working on the headset 2026-10-09</dd>
   </dl>
 </header>
@@ -1120,8 +1122,8 @@ Unloaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"</code></pre>
 
 <h2>The fix</h2>
 <ol>
-<li>On the headset: XCOM 2 â†’ controller settings â†’ change the layout from "XCOM2 Configuration" to the built-in <strong>Gamepad</strong> template (<code>controller_base/templates/gamepad_joystick.vdf</code>, a one-to-one xinput mapping).</li>
-<li>In game, from the main menu only: Options â†’ Interface â†’ Input Device â†’ Controller.</li>
+<li>On the headset: XCOM 2 → controller settings → change the layout from "XCOM2 Configuration" to the built-in <strong>Gamepad</strong> template (<code>controller_base/templates/gamepad_joystick.vdf</code>, a one-to-one xinput mapping).</li>
+<li>In game, from the main menu only: Options → Interface → Input Device → Controller.</li>
 <li>Optional: bind the grips to L3/R3 in the layout editor.</li>
 </ol>
 <p>No launch options and no ini edits. Editing the configset files over SSH instead needs a Steam restart on the Frame, so the UI route is the simpler one. The same two steps apply to a paired Xbox controller, since Steam's config for that pad points at the same 2016 layout.</p>
@@ -1134,7 +1136,7 @@ Unloaded "S:\...\EasyAntiCheat\easyanticheat_x64.dll"</code></pre>
   <h1>Half-Life: VR Mod (the original Half-Life)</h1>
   <p class="lede">The Steam version installs and the GoldSrc engine starts and connects to SteamVR. On Proton 11 the Frame's VR bridge aborts it two seconds in over an OpenGL skybox (the Doom 3 BFG VR failure). Proton Experimental fixes that, after which the mod's own VR setup fails a step later and it falls back to a flat window. Steam's launch prompts not showing in the headset added a third obstacle. Uninstalled before the final error message could be captured.</p>
   <dl class="facts">
-    <dt>Steam app</dt><dd>1908720 Â· 4.1 GB (ships its own GoldSrc engine and Half-Life content; Half-Life itself need not be installed)</dd>
+    <dt>Steam app</dt><dd>1908720 · 4.1 GB (ships its own GoldSrc engine and Half-Life content; Half-Life itself need not be installed)</dd>
     <dt>Engine</dt><dd>GoldSrc, 32-bit, OpenGL; OpenVR via the mod's <code>openvr_api.dll</code></dd>
     <dt>Compat tool</dt><dd>Proton 11.0 (ARM64), Steam's default</dd>
     <dt>Diagnosed</dt><dd>2026-10-10</dd>
@@ -1320,7 +1322,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Left stick</td><td>Move</td><td>Head-oriented wherever the mod allows it</td></tr>
 <tr><td>Left stick click</td><td>Sprint</td><td>Sprint or walk toggle</td></tr>
 <tr><td>Left grip (80%)</td><td>Run / hold action</td><td>Dash or run where the game has one; otherwise a hold action such as a weapon wheel</td></tr>
-<tr><td>Right stick left/right</td><td>Turn</td><td>Snap turn 30â€“45Â° with hysteresis, or smooth turn if the game only has smooth</td></tr>
+<tr><td>Right stick left/right</td><td>Turn</td><td>Snap turn 30–45° with hysteresis, or smooth turn if the game only has smooth</td></tr>
 <tr><td>Right stick up/down (past 75%)</td><td>Weapons</td><td>Next and previous weapon</td></tr>
 <tr><td>Right stick click</td><td>Recenter</td><td>Recenter the view</td></tr>
 <tr><td>Menu (right)</td><td>Pause</td><td>Pause or main menu (Escape)</td></tr>
@@ -1339,7 +1341,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <h2>Rules that came out of the corrections</h2>
 <ul>
 <li><strong>Grips never carry core actions.</strong> They fire from simply holding the controller. Steam's stock Frame layout presses a grip at 10% squeeze, which blocked attacking in Heretic and Hexen and dropped weapons elsewhere. Every binding here uses <code>click_activate_threshold 0.8</code> and <code>click_deactivate_threshold 0.7</code>.</li>
-<li><strong>Stick directions as buttons need hysteresis.</strong> Press at 60â€“75%, release at 30%, or snap turn and weapon switching re-fire while the stick is held. Doom 3's binding does this in the game patch; the SteamVR bindings do it with the 75% deadzone.</li>
+<li><strong>Stick directions as buttons need hysteresis.</strong> Press at 60–75%, release at 30%, or snap turn and weapon switching re-fire while the stick is held. Doom 3's binding does this in the game patch; the SteamVR bindings do it with the 75% deadzone.</li>
 <li><strong>Pause is always the menu button</strong>, with no hidden gestures. Where a mod lacks a pause action, add one (the DUSK plugin maps menu to the pad's Start; Doom 3's patch sends Escape).</li>
 <li><strong>Recenter is always the right stick click.</strong> If the mod insists on a combination, keep that working too.</li>
 <li><strong>A selects and B goes back</strong> in menus wherever the mod has separate menu actions.</li>
@@ -1350,8 +1352,8 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <p>There is no single place to set controls on the Frame; which file you write depends on how the game talks to SteamVR.</p>
 <div class="tablewrap"><table>
 <tr><th>Game type</th><th>What to write</th><th>Used by</th></tr>
-<tr><td>OpenXR game with suggested bindings (the Team Beef ports)</td><td>A SteamVR OpenXR binding JSON: physical Frame inputs on the left, the game's chosen interaction profile's inputs on the right (<code>/actions/gameplay/in/trigger</code>, <code>squeeze</code>, <code>a_click</code>, <code>thumbstick</code> and so on, for <code>oculus/touch_controller</code>). Select it for <code>steam.app.&lt;appid&gt;</code> with <code>vrsettings_bind.py &lt;appkey&gt; openxr &lt;file&gt;</code>, then restart the VR session. The action names are each port's own (Quake II: <code>trigger</code>, <code>squeeze</code>, <code>a_click</code>; the Quake port: <code>joystick</code>, <code>touchpad</code>, <code>gripvalue</code>, <code>akey</code>/<code>bkey</code>/<code>xkey</code>/<code>ykey</code>, <code>backkey</code>), so start from SteamVR's auto-generated default in <code>~/.config/openvr/config/openxr/</code> rather than another game's file. Grips must be trigger-mode <code>click</code> sources for the 0.8/0.7 thresholds to apply.</td><td><a href="#quake2">Quake II VR</a> (<code>q2_binding.py</code>), <a href="#quaketb">Quake (Team Beef)</a> (<code>q1pc_binding.py</code>)</td></tr>
-<tr><td>OpenVR game with legacy input</td><td>A legacy binding JSON selected through <code>frame_controller_CurrentURL_legacy</code> (one VR session restart to select it; edits to the file then reload per launch). Eight button ids per hand: <code>a</code>, <code>applicationmenu</code>, <code>grip</code>, <code>axis0</code>â€“<code>axis4</code> press. Leave <code>simulated_controller_type</code> out: the Oculus Touch simulation drops the axis3/axis4 ids.</td><td><a href="#doom">GZDoom VR</a> (<code>gz_grip.sh</code>, <code>gz_grip_apply.sh</code>), <a href="#selaco">Selaco VR</a> (<code>selaco_binding.py</code>)</td></tr>
+<tr><td>OpenXR game with suggested bindings (the Team Beef ports)</td><td>A SteamVR OpenXR binding JSON: physical Frame inputs on the left, the game's chosen interaction profile's inputs on the right (<code>/actions/gameplay/in/trigger</code>, <code>squeeze</code>, <code>a_click</code>, <code>thumbstick</code> and so on, for <code>oculus/touch_controller</code>). Select it for <code>steam.app.&lt;appid&gt;</code> with <code>vrsettings_bind.py &lt;appkey&gt; openxr &lt;file&gt;</code>, then restart the VR session. The action names are each port's own (Quake II: <code>trigger</code>, <code>squeeze</code>, <code>a_click</code>; the Quake port: <code>joystick</code>, <code>touchpad</code>, <code>gripvalue</code>, <code>akey</code>/<code>bkey</code>/<code>xkey</code>/<code>ykey</code>, <code>backkey</code>), so start from SteamVR's auto-generated default in <code>~/.config/openvr/config/openxr/</code> rather than another game's file. Grips must be trigger-mode <code>click</code> sources for the 0.8/0.7 thresholds to apply. For a Proton app, SteamVR honours the file only when the app suggests a single interaction profile (keep extra defaults unwritable), never with a haptic entry the app lacks, and only for actions the app created for that hand.</td><td><a href="#quake2">Quake II VR</a> (<code>q2_binding.py</code>), <a href="#quaketb">Quake (Team Beef)</a> (<code>q1pc_binding.py</code>), <a href="#redfaction">Red Faction VR</a> (<code>rf_binding.py</code>)</td></tr>
+<tr><td>OpenVR game with legacy input</td><td>A legacy binding JSON selected through <code>frame_controller_CurrentURL_legacy</code> (one VR session restart to select it; edits to the file then reload per launch). Eight button ids per hand: <code>a</code>, <code>applicationmenu</code>, <code>grip</code>, <code>axis0</code>–<code>axis4</code> press. Leave <code>simulated_controller_type</code> out: the Oculus Touch simulation drops the axis3/axis4 ids.</td><td><a href="#doom">GZDoom VR</a> (<code>gz_grip.sh</code>, <code>gz_grip_apply.sh</code>), <a href="#selaco">Selaco VR</a> (<code>selaco_binding.py</code>)</td></tr>
 <tr><td>OpenVR game with an action manifest</td><td><code>bindings_frame_controller.json</code> added to the mod's <code>action_manifest.json</code> inside the game folder.</td><td><a href="#l4d2">L4D2 VR</a>, <a href="#portal2">Portal 2 VR</a> (same action set)</td></tr>
 <tr><td>Game with its own VR config</td><td>The mod's binding file plus a SteamVR binding for the grips; sometimes a code patch for actions the mod never exposed.</td><td><a href="#doom3">Doom 3 BFG VR</a> (<code>vr_openvr.cfg</code>, <code>d3_apply_binding.sh</code>)</td></tr>
 <tr><td>Unity mod driving a virtual gamepad</td><td>A SteamVR binding onto the mod's actions, the mod's own mapping file, and a small BepInEx plugin for what neither can express (head-oriented stick, menu button).</td><td><a href="#dusk">DUSK HD VR</a> (<code>dusk_frame_controls.py</code>, <code>FrameVR_DuskHD.dll</code>)</td></tr>
@@ -1362,11 +1364,13 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <div class="tablewrap"><table>
 <tr><th>Game</th><th>Deviations from the standard</th></tr>
 <tr><td>Quake II VR</td><td>Left trigger = crouch (Quake II has one; the mod puts it on the off-hand squeeze), left grip = run, d-pad left/right = help computer / inventory, view = menu. Weapon wheel stays on the right grip, which you liked.</td></tr>
-<tr><td>Quake (Team Beef)</td><td>On the standard, confirmed in the headset 2026-10-22. Left: trigger = run (the crouch slot; Quake has no crouch), grip (80%) = two-hand weapon hold, bumper = jump, d-pad up/down = quick save/load, view = menu. Right: trigger fire, grip (80%) weapon wheel, A and Y jump, B menu back, stick snap turn 45Â°, stick click laser sight, menu = pause. Deviations: no sprint on the stick click (run is the trigger), no recenter (the port has none), right bumper and X unbound (no use key), movement is controller-oriented, not head-oriented.</td></tr>
+<tr><td>Quake (Team Beef)</td><td>On the standard, confirmed in the headset 2026-10-22. Left: trigger = run (the crouch slot; Quake has no crouch), grip (80%) = two-hand weapon hold, bumper = jump, d-pad up/down = quick save/load, view = menu. Right: trigger fire, grip (80%) weapon wheel, A and Y jump, B menu back, stick snap turn 45°, stick click laser sight, menu = pause. Deviations: no sprint on the stick click (run is the trigger), no recenter (the port has none), right bumper and X unbound (no use key), movement is controller-oriented, not head-oriented.</td></tr>
 <tr><td>Quake III VR</td><td>Port defaults; they were judged fine as they are.</td></tr>
 <tr><td>Return to Castle Wolfenstein VR</td><td>Team Beef's RTCWQuest defaults (right grip weapon wheel). Same OpenXR action set family as the Quake ports, so the same kind of binding file converts it; not yet done.</td></tr>
 <tr><td>Quake VR: Unleashed</td><td>Still the mod's Oculus Touch defaults (left trigger off-hand attack, bumpers grab, A jump, B/Y weapon cycling). Not yet converted.</td></tr>
-<tr><td>Selaco VR</td><td>Confirmed in the headset 2026-10-22. Right: trigger primary fire, bumper secondary fire (your request: both fires on the firing hand), A use, B reload, X flashlight, menu pause, stick snap turn 45Â° / up-down weapons / click recenter, grip (80%) use-or-reload (your request). Left: trigger crouch (as in the Quake games), bumper jump, stick click sprint, grip (80%) two-hand weapon hold, d-pad up/down use gadget / switch gadget, d-pad left meds, view PDA. Quick save/load dropped from the controls (they got in the way; the menu has them). Y and d-pad right unbound (legacy input runs out of ids).</td></tr>
+<tr><td>Selaco VR</td><td>Confirmed in the headset 2026-10-22. Right: trigger primary fire, bumper secondary fire (your request: both fires on the firing hand), A use, B reload, X flashlight, menu pause, stick snap turn 45° / up-down weapons / click recenter, grip (80%) use-or-reload (your request). Left: trigger crouch (as in the Quake games), bumper jump, stick click sprint, grip (80%) two-hand weapon hold, d-pad up/down use gadget / switch gadget, d-pad left meds, view PDA. Quick save/load dropped from the controls (they got in the way; the menu has them). Y and d-pad right unbound (legacy input runs out of ids).</td></tr>
+<tr><td>Red Faction VR</td><td>On the standard after patching the mod (its actions were hand-scoped; see its page). Right: trigger fire, bumper alt-fire, A laser sight, B reload, X flashlight, menu pause, stick click recenter, grip (80%) the mod's alt-fire modifier. Left: trigger crouch, bumper jump, grip (80%) use/two-hand, stick click holster. Y, view, d-pad free. Confirmed 2026-10-23.</td></tr>
+<tr><td>Hollow Knight VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the mod's virtual pad (A jump, X attack, B cast, Y dream nail, RT dash, LT super dash, RB quick cast, LB quick map, menu pause, view inventory, d-pad move/menus). Left stick click unbound (its action carries the d-pad touch); grips unused. Needs the FrameVR_HK plugin for Start/Back and the d-pad (see its page). Confirmed 2026-10-23.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
@@ -1392,7 +1396,7 @@ ssh frame "grep -E 'interaction_profiles|controller keys' ~/PCVR/Quake2VR-game/q
   <dl class="facts">
     <dt>Source</dt><dd>github.com/GameOrDie007/Quake-PCVR (e7abf81), DarkPlaces + OpenXR, OpenGL, GPL v2</dd>
     <dt>Game data</dt><dd>Steam's Quake (2310): classic Id1 paks plus the rerelease's hipnotic, rogue, dopa, mg1, mg3, ctf</dd>
-    <dt>Install</dt><dd>~/PCVR/QuakePCVR (source, scripts) Â· ~/PCVR/QuakePCVR-game (playable, 1.3 GB, paks hard-linked)</dd>
+    <dt>Install</dt><dd>~/PCVR/QuakePCVR (source, scripts) · ~/PCVR/QuakePCVR-game (playable, 1.3 GB, paks hard-linked)</dd>
     <dt>Steam entry</dt><dd>"Quake VR (Team Beef)" 2316100907, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-22; controls on the standard Frame layout, confirmed the same day</dd>
   </dl>
@@ -1440,10 +1444,10 @@ VR: session active at 72Hz</code></pre>
 <tr><th>Left hand</th><th>Right hand</th></tr>
 <tr><td>Stick: move (controller-oriented, the port's own)</td><td>Trigger: fire</td></tr>
 <tr><td>Trigger: run (Quake has no crouch)</td><td>Grip (80%): weapon wheel, hold, point, release</td></tr>
-<tr><td>Grip (80%): two-hand weapon hold</td><td>A: jump (select in menus) Â· Y: jump</td></tr>
-<tr><td>Bumper: jump</td><td>B: menu back Â· X, bumper: unbound (no use key)</td></tr>
-<tr><td>D-pad up / down: quick save / quick load</td><td>Stick: snap turn 45Â°; up/down = weapons if the wheel is off (<code>vr_weaponwheel 0</code>)</td></tr>
-<tr><td>View: menu</td><td>Stick click: laser-sight cycle (the port has no recenter) Â· Menu: pause</td></tr>
+<tr><td>Grip (80%): two-hand weapon hold</td><td>A: jump (select in menus) · Y: jump</td></tr>
+<tr><td>Bumper: jump</td><td>B: menu back · X, bumper: unbound (no use key)</td></tr>
+<tr><td>D-pad up / down: quick save / quick load</td><td>Stick: snap turn 45°; up/down = weapons if the wheel is off (<code>vr_weaponwheel 0</code>)</td></tr>
+<tr><td>View: menu</td><td>Stick click: laser-sight cycle (the port has no recenter) · Menu: pause</td></tr>
 </table></div>
 <p>Game side, in <code>id1/autoexec.cfg</code>: <code>vr_yawmode 1</code>, <code>cl_comfort 45</code>, <code>vr_quicksave 1</code>, <code>vr_weaponwheel 1</code>, <code>bind / "impulse 12"</code>, <code>bind # "impulse 10"</code>. Two fixes went into the port through <code>q1pc_port.py</code> (<code>vr_input.c</code>): haptic timing kept in double (a float-precision bug made a quick save's buzz never stop), and the left hand's A action read as the right A so the left bumper can jump.</p>
 
@@ -1459,7 +1463,7 @@ VR: session active at 72Hz</code></pre>
   <p class="lede">Team Beef's Quake2Quest brought to PC VR by GameOrDie007, compiled for the Frame with a GLX OpenXR binding. Both expansions, the soundtrack and the HD texture packs, running at 72 Hz with the standard controller layout.</p>
   <dl class="facts">
     <dt>Source</dt><dd>github.com/GameOrDie007/Quake-II-PCVR (bd161d3), Yamagi Quake II + OpenXR, OpenGL</dd>
-    <dt>Install</dt><dd>~/PCVR/Quake2VR (source, q2_port.py, q2_build.sh, q2_binding.py) Â· ~/PCVR/Quake2VR-game</dd>
+    <dt>Install</dt><dd>~/PCVR/Quake2VR (source, q2_port.py, q2_build.sh, q2_binding.py) · ~/PCVR/Quake2VR-game</dd>
     <dt>Steam entry</dt><dd>"Quake II VR" 3173477041, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-22</dd>
   </dl>
@@ -1499,7 +1503,7 @@ VR: session active at 72Hz</code></pre>
   <p class="lede">RippeR37's PC fork of Quake3Quest, compiled on the headset. The lightest of the Quake ports and the one that needed the least: a double-buffered window and a shim around its vcpkg dependency.</p>
   <dl class="facts">
     <dt>Source</dt><dd>github.com/RippeR37/q3vr (b55e8d7, v1.0), ioquake3 + OpenXR, OpenGL</dd>
-    <dt>Install</dt><dd>~/PCVR/Q3VR (source, q3_build.sh) Â· ~/PCVR/Q3VR-game</dd>
+    <dt>Install</dt><dd>~/PCVR/Q3VR (source, q3_build.sh) · ~/PCVR/Q3VR-game</dd>
     <dt>Steam entry</dt><dd>"Quake III VR" 3668573126, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-21; controls judged fine as shipped</dd>
   </dl>
@@ -1508,7 +1512,7 @@ VR: session active at 72Hz</code></pre>
 <ul>
 <li><code>q3_build.sh</code>: cmake and ninja, <code>-std=gnu17</code>, system SDL2. The project wants OpenXR from vcpkg; a <code>cmake-shim/OpenXR/OpenXRConfig.cmake</code> points it at SteamVR's <code>/opt/steamvr/bin/linuxarm64/libopenxr_loader.so</code> instead.</li>
 <li>One source change: <code>code/sdl/sdl_glimp.c</code> requests a double-buffered window.</li>
-<li><code>~/PCVR/Q3VR-game</code>: <code>q3vr</code>, the game <code>.so</code> files, the port's <code>pakQ3VR</code> and <code>pak8a</code>, and the retail <code>pak0</code>â€“<code>pak8</code> hard-linked from Steam's Quake 3 Arena (the bundled demo <code>pak0</code> was set aside).</li>
+<li><code>~/PCVR/Q3VR-game</code>: <code>q3vr</code>, the game <code>.so</code> files, the port's <code>pakQ3VR</code> and <code>pak8a</code>, and the retail <code>pak0</code>–<code>pak8</code> hard-linked from Steam's Quake 3 Arena (the bundled demo <code>pak0</code> was set aside).</li>
 <li><code>q3vr-run.sh</code>: the standard wrapper; q3vr needs a GL 4.6 core context, which Steam's <code>MESA_GL_VERSION_OVERRIDE=4.3</code> would refuse. Log: <code>q3vr-last.log</code>.</li>
 </ul>
 <h2>Undo</h2>
@@ -1523,7 +1527,7 @@ VR: session active at 72Hz</code></pre>
   <p class="lede">Vittorio Romeo's full reimagining of Quake for VR: hand interactions, physics, gore, new weapon models and its own sounds. It runs on the Frame after a long day of driver quirks, at a resolution the Adreno can afford. The Team Beef port is the better fit if you want Quake as it was; this one stays for its extras.</p>
   <dl class="facts">
     <dt>Source</dt><dd>github.com/vittorioromeo/quakevr v1.1.0-beta3 (19c014e); Ironwail + OpenXR, OpenGL 4.6, C++ (Zancle)</dd>
-    <dt>Install</dt><dd>~/PCVR/QuakeVR (sparse clone, SIMDe, q1_port.py, q1_build.sh, q1_lockin.sh, perf tools) Â· ~/PCVR/QuakeVR-game</dd>
+    <dt>Install</dt><dd>~/PCVR/QuakeVR (sparse clone, SIMDe, q1_port.py, q1_build.sh, q1_lockin.sh, perf tools) · ~/PCVR/QuakeVR-game</dd>
     <dt>Steam entry</dt><dd>"Quake VR" 2813758474, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-22; controls still the mod's Touch defaults</dd>
   </dl>
@@ -1550,7 +1554,7 @@ VR: session active at 72Hz</code></pre>
 </ol>
 
 <h2>Performance: the real cost, and the settings</h2>
-<p>With the headset worn, the eyes cost about <strong>4.6 ms per megapixel plus 4.5 ms a frame</strong>: 39 ms at the recommended 1728x1728 per eye, 23 ms at 70%, 14 ms at 50%, 8â€“9 ms at about 650x650. Nothing else moved the number: retro mode, PBR, TAA, dynamic-light and map-light shadows and their filtering, specular, fog, tone mapping, the FSR upscaler, the hidden-area mask, float depth, single-pass stereo, particles, decals, the body, lightmaps, the sky, texture filtering, the desktop mirror and the graphics presets all measured within the noise of looking around. Overdraw is fine (the game's own fragment counter reports shaded/kept = 1.0). So the per-pixel shader is simply heavy for this GPU, and resolution is the only lever.</p>
+<p>With the headset worn, the eyes cost about <strong>4.6 ms per megapixel plus 4.5 ms a frame</strong>: 39 ms at the recommended 1728x1728 per eye, 23 ms at 70%, 14 ms at 50%, 8–9 ms at about 650x650. Nothing else moved the number: retro mode, PBR, TAA, dynamic-light and map-light shadows and their filtering, specular, fog, tone mapping, the FSR upscaler, the hidden-area mask, float depth, single-pass stereo, particles, decals, the body, lightmaps, the sky, texture filtering, the desktop mirror and the graphics presets all measured within the noise of looking around. Overdraw is fine (the game's own fragment counter reports shaded/kept = 1.0). So the per-pixel shader is simply heavy for this GPU, and resolution is the only lever.</p>
 <p><code>q1_lockin.sh</code> writes <code>quakevr/autoexec.cfg</code> and the saved config:</p>
 <pre><code>vr_graphics_preset 1        // Low: dynamic-light shadows, no normal maps or map-light shadows
 vr_bloom 0                  // black eyes through zink
@@ -1598,7 +1602,7 @@ vr_profile_interval 5
   <dl class="facts">
     <dt>Source</dt><dd>github.com/Team-Beef-Studios/RealRTCWXR (77a6fab, RealRTCW XR 0.8.7), ioRTCW/rtcw-sp + OpenXR, OpenGL (rend2), GPL-3</dd>
     <dt>Game data</dt><dd>RealRTCW (free, Steam 1379630) on its <code>realrtcw5.0</code> branch, plus the original RTCW (9010) single-player paks</dd>
-    <dt>Install</dt><dd>~/PCVR/RealRTCWXR (source, rtcw_port.py, rtcw_build.sh, rtcw_setup.sh, rtcw_cycle.sh) Â· ~/PCVR/RealRTCWXR-game (2.4 GB, paks hard-linked)</dd>
+    <dt>Install</dt><dd>~/PCVR/RealRTCWXR (source, rtcw_port.py, rtcw_build.sh, rtcw_setup.sh, rtcw_cycle.sh) · ~/PCVR/RealRTCWXR-game (2.4 GB, paks hard-linked)</dd>
     <dt>Steam entry</dt><dd>"Return to Castle Wolfenstein VR" 3255137504, native, VR flag, red RTCW VR art</dd>
     <dt>Set up</dt><dd>2026-10-22; controls are Team Beef's defaults</dd>
   </dl>
@@ -1622,7 +1626,7 @@ vr_profile_interval 5
 <p><code>rtcw_build.sh</code> runs <code>make</code> with <code>USE_INTERNAL_LIBS=0</code> (the bundled SDL2 is x86-64) but the bundled ogg/vorbis/opus/zlib/jpeg sources, <code>USE_CURL=0</code>, <code>USE_CODEC_OPUS=0 USE_VOIP=0</code> (the client header wants a system <code>opus/opusfile.h</code> otherwise), <code>-std=gnu99 -fcommon</code>, and GCC 15's new hard errors downgraded. Output: <code>RealRTCW.aarch64</code>, <code>renderer_sp_rend2_aarch64.so</code>, <code>main/{cgame,qagame,ui}.sp.aarch64.so</code>. Zink exposes <code>GL_OVR_multiview2</code>, which the renderer needs.</p>
 
 <h2>Game folder</h2>
-<p><code>rtcw_setup.sh</code> builds <code>~/PCVR/RealRTCWXR-game</code>: the binaries, and a lowercase <code>main/</code> (the engine's base game is <code>"main"</code>; a capitalised folder gave "pak0.pk3 is missing") with RealRTCW's pk3s and cfgs and RTCW's <code>pak0</code>, <code>sp_pak1</code>â€“<code>4</code> hard-linked, plus <code>z_zzzRealRTCWXR.pk3</code> zipped from the repo's <code>z_zzzRealRTCWXR/</code> (the job of their <code>make_z_vr_assets_pk3.bat</code>). It removes old links first: a Steam update replaces files, and a branch switch can drop pk3s that must not keep loading. The run script is the usual wrapper (<code>SDL_VIDEODRIVER=x11</code>, Mesa override unset, <code>fs_homepath ./home</code>), with two optional markers: <code>env.test</code> is sourced for test environment (<code>RTCWXR_DEBUG_INPUT=1</code> traces every VR key and UI click into the log), and <code>gdb.test</code> runs the next launch under gdb into <code>rtcwxr-gdb.log</code>.</p>
+<p><code>rtcw_setup.sh</code> builds <code>~/PCVR/RealRTCWXR-game</code>: the binaries, and a lowercase <code>main/</code> (the engine's base game is <code>"main"</code>; a capitalised folder gave "pak0.pk3 is missing") with RealRTCW's pk3s and cfgs and RTCW's <code>pak0</code>, <code>sp_pak1</code>–<code>4</code> hard-linked, plus <code>z_zzzRealRTCWXR.pk3</code> zipped from the repo's <code>z_zzzRealRTCWXR/</code> (the job of their <code>make_z_vr_assets_pk3.bat</code>). It removes old links first: a Steam update replaces files, and a branch switch can drop pk3s that must not keep loading. The run script is the usual wrapper (<code>SDL_VIDEODRIVER=x11</code>, Mesa override unset, <code>fs_homepath ./home</code>), with two optional markers: <code>env.test</code> is sourced for test environment (<code>RTCWXR_DEBUG_INPUT=1</code> traces every VR key and UI click into the log), and <code>gdb.test</code> runs the next launch under gdb into <code>rtcwxr-gdb.log</code>.</p>
 
 <h2>Check it worked</h2>
 <pre><code>ssh frame "grep -a -i 'realrtcw' ~/.local/share/Steam/logs/vrserver.txt | tail -5"
@@ -1651,7 +1655,7 @@ ssh frame "cd ~/PCVR/RealRTCWXR-game/main; for f in *.so; do echo \$f \$(ldd -r 
   <dl class="facts">
     <dt>Source</dt><dd>github.com/NPi2Loup/DOOM-3-BFG-VR @2e7209a, OpenVR (SDK at Valve master 0924064), OpenGL</dd>
     <dt>Game data</dt><dd>Steam's DOOM 3 BFG Edition base/ (208200), linked, plus the repo's renderprogs and vr_assets</dd>
-    <dt>Install</dt><dd>~/PCVR/D3BFGVR (source) Â· ~/PCVR/D3BFGVR-game Â· scripts in ~/PCVR/bin/d3_*</dd>
+    <dt>Install</dt><dd>~/PCVR/D3BFGVR (source) · ~/PCVR/D3BFGVR-game · scripts in ~/PCVR/bin/d3_*</dd>
     <dt>Steam entry</dt><dd>"Doom 3 BFG VR" 3138655638, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-21 (replaces the 2026-10-06 Proton dead end)</dd>
   </dl>
@@ -1692,7 +1696,7 @@ err:msvcrt:_wassert (L"!status",L"../src-vrclient/vrcompositor_manual.c",2264)</
   <dl class="facts">
     <dt>Source</dt><dd>github.com/Bassquake/Aliens-Versus-Predator-VR (6ef4868), OpenXR, OpenGL via zink</dd>
     <dt>Game data</dt><dd>Steam's AvP Classic, untouched, through lowercase symlinks</dd>
-    <dt>Install</dt><dd>~/PCVR/AVPVR (source) Â· ~/PCVR/AVPVR-game (avpvr_arm64, bundled libs, avpvr-run.sh)</dd>
+    <dt>Install</dt><dd>~/PCVR/AVPVR (source) · ~/PCVR/AVPVR-game (avpvr_arm64, bundled libs, avpvr-run.sh)</dd>
     <dt>Steam entry</dt><dd>"AvP VR" 4045669378, native, VR flag</dd>
     <dt>Set up</dt><dd>2026-10-20</dd>
   </dl>
@@ -1717,7 +1721,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
     <dt>Steam app</dt><dd>DUSK 519860 (Windows build via proton-stable) with the free DUSK HD DLC</dd>
     <dt>Mod</dt><dd>Astienth's Dusk_HD_VR 1.0.0 (FarmerTrueVR Discord), BepInEx, OpenVR</dd>
     <dt>Install</dt><dd>~/PCVR/DuskHDVR/install.sh into Dusk/DLC/DUSK HD; wrapper duskhdvr-launch.sh</dd>
-    <dt>Entries</dt><dd>DUSK (flat) Â· "DUSK HD VR" 3975090014 (VR)</dd>
+    <dt>Entries</dt><dd>DUSK (flat) · "DUSK HD VR" 3975090014 (VR)</dd>
     <dt>Fixed</dt><dd>2026-10-21</dd>
   </dl>
 </header>
@@ -1743,7 +1747,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
   <dl class="facts">
     <dt>Steam app</dt><dd>F.E.A.R. 21090, Proton Experimental (ARM64): it ships the i386 wineopenxr the mod needs</dd>
     <dt>Mod</dt><dd>thefreemike31/fear-vr v1.7.7 (OpenXR via D3D)</dd>
-    <dt>Entries</dt><dd>F.E.A.R. (flat, library) Â· "F.E.A.R. VR" 2341077394 (launcher â†’ Play in VR)</dd>
+    <dt>Entries</dt><dd>F.E.A.R. (flat, library) · "F.E.A.R. VR" 2341077394 (launcher → Play in VR)</dd>
     <dt>Fixed</dt><dd>2026-10-21</dd>
   </dl>
 </header>
@@ -1766,7 +1770,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
   <dl class="facts">
     <dt>Steam app</dt><dd>550, Windows build on Proton Experimental (ARM64) (set before installing so Steam fetches Windows depots)</dd>
     <dt>Mod</dt><dd>sd805/l4d2vr v0.6.2, OpenVR</dd>
-    <dt>Entries</dt><dd>Left 4 Dead 2 (flat, Vulkan renderer) Â· "Left 4 Dead 2 VR" 3229493339</dd>
+    <dt>Entries</dt><dd>Left 4 Dead 2 (flat, Vulkan renderer) · "Left 4 Dead 2 VR" 3229493339</dd>
     <dt>Fixed</dt><dd>2026-10-21</dd>
   </dl>
 </header>
@@ -1793,7 +1797,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
   <dl class="facts">
     <dt>Steam app</dt><dd>620, Proton Experimental (ARM64)</dd>
     <dt>Mod</dt><dd>Spencer0187/portal2vr-roomscale V0.2.2, OpenVR</dd>
-    <dt>Entries</dt><dd>Portal 2 (flat, the mod's switcher off) Â· "Portal 2 VR" 4037750409</dd>
+    <dt>Entries</dt><dd>Portal 2 (flat, the mod's switcher off) · "Portal 2 VR" 4037750409</dd>
     <dt>Set up</dt><dd>2026-10-21</dd>
   </dl>
 </header>
@@ -1809,7 +1813,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
   <dl class="facts">
     <dt>Steam app</dt><dd>622650 on beta branch "release-1.5" (build 3248927, Unity 2018.2.12f1 Mono), Proton 11.0 (ARM64)</dd>
     <dt>Mod</dt><dd>Team-Beef-Studios/BendyVR 1.2.2, OpenVR</dd>
-    <dt>Entries</dt><dd>Bendy (flat, no BepInEx) Â· "Bendy VR" 3641501148</dd>
+    <dt>Entries</dt><dd>Bendy (flat, no BepInEx) · "Bendy VR" 3641501148</dd>
     <dt>Set up</dt><dd>2026-10-20</dd>
   </dl>
 </header>
@@ -1833,7 +1837,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
     <dt>Steam app</dt><dd>238010, Proton 11.0 (ARM64), no launch options</dd>
     <dt>Mod</dt><dd>farmerarmor/DeusExHRVR 0.3.0 (d3d11.dll proxy + DeusExHRVRHost.exe, OpenXR)</dd>
     <dt>Entry</dt><dd>The library entry, VR-only, red-labelled</dd>
-    <dt>Set up</dt><dd>2026-10-21; SteamVR paced it at 24â€“36 Hz reprojected on the first run</dd>
+    <dt>Set up</dt><dd>2026-10-21; SteamVR paced it at 24–36 Hz reprojected on the first run</dd>
   </dl>
 </header>
 <ul>
@@ -1851,7 +1855,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
 <header class="g-head">
   <span class="status doc">Reference</span>
   <h1>Library entries and art: flat by default, VR labelled</h1>
-  <p class="lede">With a dozen mods installed, the library needs to say which tile starts the game flat and which starts it in VR. The rule since 2026-10-21: every entry that launches a VR mod carries a red "â€¦ VR" label on its art, and wherever possible the original entry stays flat with a separate "&lt;Game&gt; VR" shortcut beside it.</p>
+  <p class="lede">With a dozen mods installed, the library needs to say which tile starts the game flat and which starts it in VR. The rule since 2026-10-21: every entry that launches a VR mod carries a red "… VR" label on its art, and wherever possible the original entry stays flat with a separate "&lt;Game&gt; VR" shortcut beside it.</p>
 </header>
 <h2>The flat/VR split</h2>
 <p>For Steam games with a VR mod, the game's own entry gets the launch option <code>~/PCVR/bin/flatvr-launch.sh &lt;game&gt; %command%</code>, which runs the game flat unless <code>-frame-vr</code> is on the command line. A non-Steam shortcut named "&lt;Game&gt; VR" runs <code>/usr/bin/steam -applaunch &lt;appid&gt; -frame-vr</code> with the VR flag set. Setup: <code>flatvr_setup.sh</code>; test: <code>flatvr_test.sh</code>; logs: <code>~/PCVR/modes/&lt;game&gt;.log</code>.</p>
@@ -1914,7 +1918,7 @@ ssh frame "python3 ~/PCVR/bin/apply_art.py ~/PCVR/art/&lt;game&gt;"
   <dl class="facts">
     <dt>Source</dt><dd>github.com/emawind84/SelacoVR (6e8f7e0, "selacovr2.0"), GZDoom/QuestZDoom + OpenVR, OpenGL, GPL-3; ZMusic 1.1.12; OpenVR SDK</dd>
     <dt>Game data</dt><dd>Selaco (Steam 1592280) on its <code>v0.89-bf</code> branch: <code>Selaco.ipk3</code> hard-linked into the game folder. The mod is built for that version; the public branch is newer</dd>
-    <dt>Install</dt><dd>~/PCVR/SelacoVR (src, zmusic, openvr, selaco_port.py, selaco_build.sh, selaco_cycle.sh, selaco_binding.py) Â· ~/PCVR/SelacoVR/game</dd>
+    <dt>Install</dt><dd>~/PCVR/SelacoVR (src, zmusic, openvr, selaco_port.py, selaco_build.sh, selaco_cycle.sh, selaco_binding.py) · ~/PCVR/SelacoVR/game</dd>
     <dt>Steam entry</dt><dd>"Selaco VR" 3063768737, native (no compat tool), VR flag, red SELACO VR art</dd>
     <dt>Set up</dt><dd>2026-10-22; controls on the <a href="#controls">standard layout</a></dd>
   </dl>
@@ -1930,12 +1934,12 @@ ssh frame "python3 ~/PCVR/bin/apply_art.py ~/PCVR/art/&lt;game&gt;"
 <li><strong>Input device on POSIX:</strong> the OpenVR joystick lives in <code>win32/i_openVR.cpp</code> and plugs into the Win32 <code>JoyDevices[]</code> table. It now builds on the SDL side too (and is removed from the Win32 list, or CMake marks it header-only) with a small <code>FJoystickCollection</code> shim; <code>posix/sdl/i_joystick.cpp</code> polls it through <code>I_OpenVRGetDevices</code>/<code>I_OpenVRAddAxes</code>. The SDK's <code>linuxarm64</code> directory is picked for aarch64.</li>
 <li><strong>Struct packing:</strong> the port uses OpenVR's C API, and <code>openvr_capi.h</code> leaves <code>VRControllerState_t</code> at default packing while the Linux runtime fills it 4-byte packed. Every button and axis decoded as zero until the header packed it like the C++ one does.</li>
 <li><strong>One VR_Init per process:</strong> <code>SetupOverlay()</code> called <code>VR_Init</code> a second time as an Overlay app; the Linux runtime logged "called VR_Init 2 times", shut the client down, and the next call segfaulted inside <code>vrclient.so</code>. The overlay interface is reachable from the scene init, so the second call is gone.</li>
-<li><strong>Frame quirks:</strong> the Frame driver reports no <code>Prop_AxisNType</code>, so the stick (axis 0) is assumed when no joystick axis is found; poses and controllers are polled on the title map too (Selaco's main menu is a TITLEMAP, and the port skipped polling there, so menus were dead until a game started); the menu overlay takes the left eye's image instead of alternating eyes (the 3D scene behind the PDA made it judder); spare legacy ids (axis2/3/4 press) become <code>Joy11</code>â€“<code>Joy16</code>; a <code>vr_recenter</code> console command replaces a TODO; <code>vr_debug_buttons 1</code> prints the raw button masks.</li>
+<li><strong>Frame quirks:</strong> the Frame driver reports no <code>Prop_AxisNType</code>, so the stick (axis 0) is assumed when no joystick axis is found; poses and controllers are polled on the title map too (Selaco's main menu is a TITLEMAP, and the port skipped polling there, so menus were dead until a game started); the menu overlay takes the left eye's image instead of alternating eyes (the 3D scene behind the PDA made it judder); spare legacy ids (axis2/3/4 press) become <code>Joy11</code>–<code>Joy16</code>; a <code>vr_recenter</code> console command replaces a TODO; <code>vr_debug_buttons 1</code> prints the raw button masks.</li>
 </ul>
 <pre><code>ssh frame "bash ~/PCVR/SelacoVR/selaco_cycle.sh"     # patch, build, copy the binary into game/, relaunch through Steam</code></pre>
 
 <h2>Game folder and launcher</h2>
-<p><code>game/</code> holds the <code>Selaco</code> binary, the build's <code>qzdoom.pk3</code>/<code>lights.pk3</code>/<code>brightmaps.pk3</code>, soundfonts, <code>libzmusic.so</code>, SteamVR's own arm64 <code>libopenvr_api.so</code> (the port dlopens <code>$PROGDIR/libopenvr_api.so</code>), <code>Selaco.ipk3</code>, and <code>mods/</code> with <code>selaco-vr.pk3</code> and the laser sight, which autoload. <code>selacovr-run.sh</code> is the launcher the shortcut runs: OpenGL backend, <code>vr_mode 10</code>, a 1400Â² mirror window, and <code>+exec frame.cfg</code>.</p>
+<p><code>game/</code> holds the <code>Selaco</code> binary, the build's <code>qzdoom.pk3</code>/<code>lights.pk3</code>/<code>brightmaps.pk3</code>, soundfonts, <code>libzmusic.so</code>, SteamVR's own arm64 <code>libopenvr_api.so</code> (the port dlopens <code>$PROGDIR/libopenvr_api.so</code>), <code>Selaco.ipk3</code>, and <code>mods/</code> with <code>selaco-vr.pk3</code> and the laser sight, which autoload. <code>selacovr-run.sh</code> is the launcher the shortcut runs: OpenGL backend, <code>vr_mode 10</code>, a 1400² mirror window, and <code>+exec frame.cfg</code>.</p>
 <p><code>frame.cfg</code> matters more than usual. The mod's VR defaults live in a <code>CVARINFO.vrdefaults</code> lump this engine never reads, so Selaco's screen-space effects (dash, dirt, steam, armor overlays, vignette, film grain, momentum HUD) stayed on and painted a translucent box on the HUD plane in front of you. The cfg applies those defaults, <code>use_mode 2</code> (use by hand aim or view), <code>vr_overlayscreen 2</code> (menus on a head-locked overlay; the default 1 parks it in raw tracking space out of view, 0 draws menus in-world), pins Selaco's Steam Deck "Quality" preset (<code>r_thingLOD 1400</code> keeps the voxel characters; the first-run "Performance" prompt would set 700 and turn them into sprites), and binds the keys. Config is <code>~/.config/selaco-ea/selaco-ea.ini</code>. Markers: <code>SelacoVR/dev.test</code> (button-mask log, stick click = screenshot), <code>SelacoVR/gdb.test</code> (next launch under gdb).</p>
 
 <h2>Controls</h2>
@@ -1958,6 +1962,92 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
 <h2>Undo</h2>
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3063768737; rm -rf ~/PCVR/SelacoVR ~/.config/selaco-ea"
 # and remove the steam.app.3063768737 section from ~/.config/openvr/config/steamvr.vrsettings</code></pre>
+</article>
+
+<!-- ===================== RED FACTION VR ===================== -->
+<article id="redfaction" class="guide" data-title="Red Faction VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Red Faction VR: Alpine Faction VR under Proton</h1>
+  <p class="lede">Cactus VR Studios' VR build of the Alpine Faction community patch for Red Faction (2001). Its README says SteamVR can't run it because Windows SteamVR has no 32-bit OpenXR runtime; on the Frame, Proton's 32-bit wineopenxr bridges it straight into SteamVR. Getting the Frame controller layout onto it needed a patched, rebuilt mod, and that taught three things about how SteamVR treats custom OpenXR bindings for Proton apps.</p>
+  <dl class="facts">
+    <dt>Mod</dt><dd>github.com/CactusVRStudios/alpinefactionVR 1.1 beta (MPL-2.0, fork of Alpine Faction / Dash Faction), 32-bit, OpenXR on a forced Direct3D 11 renderer</dd>
+    <dt>Game data</dt><dd>Red Faction (Steam 20530); the mod's installer converts the Steam RF.exe into the 1.20 NA exe it requires</dd>
+    <dt>Install</dt><dd>~/PCVR/RedFactionVR (dl, src, container, rf_*.sh/py); the mod's files live in the Steam game folder</dd>
+    <dt>Steam entry</dt><dd>"Red Faction VR" 3865968601, Proton Experimental (ARM64) in Red Faction's own prefix, red RED FACTION VR art; the library entry stays the flat game</dd>
+    <dt>Set up</dt><dd>2026-10-23; controls on the <a href="#controls">standard layout</a> after a mod patch</dd>
+  </dl>
+</header>
+
+<h2>Install</h2>
+<p>The release zip's <code>VR Mod</code> folder goes into the game folder as-is. The Inno installer is still needed, because Alpine Faction refuses the Steam executable's checksum: run silently inside the game's prefix (the "Red Faction VR" shortcut wrapper has a <code>mode=run</code> hook for exactly this) with <code>/VERYSILENT /DIR=Z:\...\Red Faction</code>, it bsdiff-patches <code>RF.exe</code> into <code>RF_120na.exe</code> and points the launcher at it. Two things to undo afterwards: it swaps <code>RedFaction.exe</code> for a Windows symlink Linux cannot follow (restore the <code>.bak</code>), and the launcher's "Executable Path" must be a <code>Z:</code> path, not Proton's <code>S:</code> game drive, or it reports <code>tables.vpp</code> missing from a folder that plainly has it.</p>
+<pre><code>ssh frame "bash ~/PCVR/RedFactionVR/rf_launch.sh 60"     # launch through Steam and report the mod's OpenXR log
+# AlpineFaction.log: Runtime: SteamVR/OpenXR 2.18.2 · Enabled extension: XR_KHR_D3D11_enable · Eye swapchains 1728x1728 · OpenXR session begun</code></pre>
+
+<h2>Controls: three things SteamVR does with custom OpenXR bindings for Proton apps</h2>
+<ol>
+<li><strong>One interaction profile, or the custom file is ignored.</strong> SteamVR builds a Proton OpenXR app's input context from auto-generated defaults (<code>~/.config/openvr/config/openxr/steam.app.&lt;id&gt;_&lt;type&gt;_N_binding.json</code>, rewritten every launch) and only honours the user-selected Frame-path file when that context holds a single profile. This mod suggests Touch and Index; Quake II suggests only Touch, which is why its binding just worked. The launcher keeps the app's Index default unwritable (a read-only <code>{}</code>), so SteamVR logs "Unable to write" and loads one binding.</li>
+<li><strong>Touch-typed files get auto-remapped.</strong> A custom file with <code>controller_type: oculus_touch</code> is treated as Touch paths and pushed through the Frame remap, which drives each hand's trigger and bumper from the one Touch trigger, so bumper and trigger can't differ. A file carrying a haptic entry for an action the app doesn't define ("Unknown action … when loading binding file") is dropped whole; keep <code>"haptics": []</code>.</li>
+<li><strong>The mod's actions were hand-scoped.</strong> Jump and crouch accepted right-hand sources only, reload, flashlight, alt-fire and menu left-hand only, and under SteamVR the menu action was ignored in favour of a reload+crouch hold chord. That is in code, so the fix is a rebuild.</li>
+</ol>
+
+<h2>The patch and the build</h2>
+<p><code>rf_patch.py</code> (idempotent) creates those six actions for both hands and reads them with <code>XR_NULL_PATH</code>, makes the pause press <code>input.menu || chord_held</code>, and adds a <code>recenter</code> action that calls the mod's own <code>recenter_tracking()</code>. The project documents a MinGW cross-build on Ubuntu; the Frame has podman, so <code>container/Containerfile</code> builds image <code>afvr-mingw14</code> from Debian trixie, because the mod uses C++23 "deducing this" and Ubuntu 24.04's MinGW GCC 13 rejects it. The OpenXR loader needs <code>-DWINAPI_PARTITION_SYSTEM=0</code> under the project's <code>-Werror=undef</code>. The <code>shader_compiler.exe</code> steps fail (a Windows tool), which does not matter: the compiled shaders ship in <code>alpinefaction.vpp</code>.</p>
+<pre><code>ssh frame "bash ~/PCVR/RedFactionVR/rf_rebuild.sh"   # patch, incremental ninja in the container, install AlpineFaction.dll (.orig kept), rebind, relaunch</code></pre>
+
+<h2>Layout</h2>
+<p><code>rf_binding.py</code> writes <code>rf_frame_binding.json</code> (controller_type <code>frame_controller</code>, Touch interaction profile, poses on <code>openxr_grip</code>/<code>openxr_aim</code>), selected with <code>vrsettings_bind.py steam.app.3865968601 openxr</code> and one VR session restart. Right: trigger fire, bumper alt-fire, A laser sight, B reload, X flashlight, menu pause, stick turn and weapon cycle, stick click recenter, grip (80%) the mod's alt-fire modifier. Left: trigger crouch, bumper jump, grip (80%) use and two-hand grab, stick move, stick click holster. Y, view and the d-pad are free: the mod has no further actions. Snap turn is set to 45° in the prefix registry.</p>
+
+<h2>Caveats</h2>
+<ul>
+<li>Multiplayer aim does not follow the controller; the mod calls MP unsupported. Single-player aims correctly.</li>
+<li>The HUD and the menus are quads fixed at the recenter anchor; recenter (right stick click) once you are in, especially if the headset was off your head at launch.</li>
+<li>The first Steam launch of the flat game waits on a dialog in the headset; the VR shortcut does not.</li>
+</ul>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3865968601; cd ~/.local/share/Steam/steamapps/common/'Red Faction' && mv AlpineFaction.dll.orig AlpineFaction.dll"
+# or verify Red Faction's files in Steam to drop the mod entirely; remove ~/PCVR/RedFactionVR and the steam.app.3865968601 section of steamvr.vrsettings</code></pre>
+</article>
+
+<!-- ===================== HOLLOW KNIGHT VR ===================== -->
+<article id="hollowknight" class="guide" data-title="Hollow Knight VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Hollow Knight VR: UnityVR_Bepinex under Proton, with a Frame-specific plugin</h1>
+  <p class="lede">"Hollow Knight VR Enhanced" is a BepInEx 5 mod built on the UnityVR_Bepinex core, the same family as DUSK HD VR, so most of DUSK's fixes carried over: strip the core's native Harmony patches, stand in for its ViGEm virtual gamepad, and keep the flat library entry flat. New here: the game needs <code>steam_appid.txt</code> to initialise under a shortcut, a first-run language screen hides behind a black VR view, the core clears the virtual d-pad every frame, and the Frame controller driver turns a held d-pad into pulses. A small plugin, FrameVR_HK, handles the last three.</p>
+  <dl class="facts">
+    <dt>Mod</dt><dd>HollowKnight_VREnhanced.zip (BepInEx 5.4.22 + UnityVR_Bepinex post-2020 x64 core + SteamVR Unity plugin), OpenVR through SteamVR's action system</dd>
+    <dt>Game data</dt><dd>Hollow Knight (Steam 367520, Unity 2020, 64-bit); the mod's files live in the game folder</dd>
+    <dt>Install</dt><dd>~/PCVR/HollowKnightVR (dl, extracted, hk_*.sh/py, FrameVR_HK.cs/dll, the stripped core)</dd>
+    <dt>Steam entry</dt><dd>"Hollow Knight VR" 2289186113, Proton Experimental (ARM64) in Hollow Knight's own prefix, red HOLLOW KNIGHT VR art; the library entry stays the flat game</dd>
+    <dt>Set up</dt><dd>2026-10-23; controls = Hollow Knight's own Xbox layout, 1:1</dd>
+  </dl>
+</header>
+
+<h2>Install</h2>
+<p>Unzip into the game folder (BepInEx, winhttp.dll, doorstop_config.ini, the mod's Managed/Plugins/StreamingAssets files). Then the DUSK recipe: <code>StripNativePatches.exe</code> removes the core's Harmony patches on native methods, which recurse under FEX until the stack overflows; the core is extracted from its Costura-packed plugin first. The "Hollow Knight VR" shortcut wrapper sets <code>WINEDLLOVERRIDES="winhttp=n,b;xinput1_3=n,b"</code> so BepInEx loads only for the VR entry, and starts <code>uinput_pad</code> for the virtual pad (below). Two things specific to this game: the mod's Steamworks init fails with "Steam failed to initialize" under a shortcut, fixed by a <code>steam_appid.txt</code> containing 367520 in the game folder (the app then also connects to SteamVR as steam.app.367520); and the first launch is a black screen with no sound, because the language-select screen sits on a camera the mod does not render. Pick the language once in the flat game (or in theater mode) and it never comes back. The mod's AspectBorders camera is excluded in <code>UnityVR_Bepinex.cfg</code>.</p>
+<pre><code>ssh frame "bash ~/PCVR/HollowKnightVR/hk_launch.sh 60"     # launch through Steam; BepInEx / Player / vrserver log summary</code></pre>
+
+<h2>Controls: a virtual Xbox pad, then three fixes</h2>
+<p>With <code>vrControllersSupport = true</code> the core maps SteamVR actions onto a ViGEm Xbox pad that the game reads as an ordinary controller. Proton cannot load the ViGEm driver, so DUSK's <code>framepad</code> stands in: a <code>ViGEmClient.dll</code> that writes the pad state to shared memory, a <code>uinput_pad</code> that mirrors it as a Linux Xbox 360 controller, and an <code>xinput1_3.dll</code> shim the game polls. <code>hk_frame_controls.py</code> writes <code>bindings_frame_controller.json</code> for the Frame and selects it in <code>steamvr.vrsettings</code>. The Frame has every Xbox button, so the binding is Hollow Knight's own default pad layout: A jump, X attack, B focus/cast, Y dream nail, right trigger dash, left trigger super dash, right bumper quick cast, left bumper quick map (the core maps the grip actions to the bumpers, so the bumpers feed <code>leftgrip</code>/<code>rightgrip</code>), left stick move, d-pad move and menus. The plugin, a 150-line BepInEx plugin compiled with the .NET Framework csc against the game's assemblies, adds:</p>
+<ol>
+<li><strong>Pause and inventory on the real buttons.</strong> The core only reaches Start and Back through a "hotkey" gesture (left controller within 25 cm of the head, which also buzzes the controller every frame). The plugin postfixes the Start/Back action handlers to press Start/Back on the pad, and patches the gesture out.</li>
+<li><strong>A d-pad that survives the core.</strong> The core's left-joystick handler is an every-frame update listener that ends by clearing all four d-pad buttons, so a held d-pad direction reached the game as a one-frame press. The plugin re-asserts the held directions right after it.</li>
+<li><strong>A d-pad that survives the Frame driver.</strong> Traced from the mod's action events: the driver reports a held d-pad click as ~150 ms pulses every ~250 ms that stop after about a second, and its touch input is one shared sensor (a resting thumb fires up, left and right together). So the binding sends the d-pad clicks to the direction actions and the d-pad touch to the unused <code>ClickLeftJoystick</code> action; the plugin latches a pulsed direction for as long as the touch lasts, releases the opposite direction on a new pulse, and keeps a 0.4 s latch for taps. The left stick's own click is unbound for it; Hollow Knight does not use L3.</li>
+</ol>
+<pre><code>ssh frame "bash ~/PCVR/HollowKnightVR/hk_plugin_install.sh"      # install FrameVR_HK.dll into BepInEx/plugins and relaunch ("debug" adds timed d-pad tracing)</code></pre>
+
+<h2>Caveats</h2>
+<ul>
+<li>The d-pad hold depends on the capacitive sensor: keep the thumb on the pad after pressing, lift to stop. That is a Frame driver limitation (read-only, no settings), not the game's.</li>
+<li>Pressing between two d-pad directions pulses both; a diagonal is harmless in Hollow Knight (up/down only look when standing still).</li>
+<li>The game is 2D on a quad; the mod's own options (theater mode, camera modes) are on its in-game menu.</li>
+</ul>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 2289186113"
+# the flat game is untouched by the mod unless BepInEx is forced on; to remove the mod, delete BepInEx/, winhttp.dll, doorstop_config.ini, xinput1_3.dll, steam_appid.txt and verify files in Steam</code></pre>
 </article>
 
 </main>
@@ -1986,7 +2076,7 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
     });
     var art = document.getElementById(id);
     var t = art.getAttribute('data-title');
-    document.title = (id === defaultId ? '' : t + ' Â· ') + 'Frame Standalone Guides';
+    document.title = (id === defaultId ? '' : t + ' · ') + 'Frame Standalone Guides';
     updatePager(art, id);
     window.scrollTo({ top: 0 });
     try { localStorage.setItem('fsg-last', id); } catch (e) {}
@@ -2002,8 +2092,8 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
     nav.className = 'pager';
     nav.setAttribute('aria-label', 'Previous and next guide');
     var left = document.createElement('span'), right = document.createElement('span');
-    if (prev) { var a = document.createElement('a'); a.href = '#' + prev; a.textContent = 'â† ' + document.getElementById(prev).getAttribute('data-title'); left.appendChild(a); }
-    if (next) { var b = document.createElement('a'); b.href = '#' + next; b.textContent = document.getElementById(next).getAttribute('data-title') + ' â†’'; right.appendChild(b); }
+    if (prev) { var a = document.createElement('a'); a.href = '#' + prev; a.textContent = '← ' + document.getElementById(prev).getAttribute('data-title'); left.appendChild(a); }
+    if (next) { var b = document.createElement('a'); b.href = '#' + next; b.textContent = document.getElementById(next).getAttribute('data-title') + ' →'; right.appendChild(b); }
     nav.appendChild(left); nav.appendChild(right);
     art.appendChild(nav);
   }

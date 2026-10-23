@@ -34,6 +34,24 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Workaround:** pack the C declaration to match (`#pragma pack(push, 4)` around `VRControllerState_t` on Linux).
 - **Who:** Valve (openvr_capi.h); anyone using the C API on Linux.
 
+### The left d-pad's click arrives as pulses, and its touch is one shared sensor
+
+- **Observed:** traced from a mod's SteamVR action events (Hollow Knight VR): a held left d-pad click reaches the app as pulses of about 150 ms every 250 ms that stop after about one second even while the button stays down. The d-pad's touch input is a single capacitive sensor, so a resting thumb fires up, left and right together. The digital click never reaches an app as a plain press and release. The driver is read-only with no settings.
+- **Impact:** any hold action on the d-pad (walking in a 2D game, held menu scrolling) breaks after a second.
+- **Workaround:** bind the d-pad to tap actions only. Where a hold is needed, bind the d-pad touch to a spare action and latch the last pulsed direction while the touch lasts ([FrameVR_HK.cs](scripts/hollow-knight-vr/FrameVR_HK.cs)).
+- **Who:** Valve (frame_controller driver).
+
+### Custom OpenXR bindings for Proton apps: single profile, no Touch typing, no stray haptics
+
+- **Observed (Red Faction VR):** SteamVR builds a Proton OpenXR app's input context from auto-generated defaults in `~/.config/openvr/config/openxr/steam.app.<id>_<type>_N_binding.json`, rewritten every launch, and only honours a user-selected custom binding when that context holds a single interaction profile. An app that suggests both Touch and Index bindings keeps its defaults. Making the Index default unwritable (a read-only `{}`) produces `SetXrInputConfig failed. Unable to write` and `Loading 1 bindings`, after which the custom file applies.
+- A custom file typed `controller_type: oculus_touch` is treated as Touch paths and pushed through the Frame remap, which drives each hand's trigger and bumper from the one Touch trigger; type it `frame_controller` instead.
+- A file carrying a haptic entry for an action the app does not define (`Unknown action ... when loading binding file`) is dropped whole; keep `"haptics": []`.
+- **Who:** Valve (SteamVR OpenXR input for Proton apps).
+
+### Apps started from a non-Steam shortcut may need steam_appid.txt
+
+- **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix (Hollow Knight VR) fails its Steam init (`Steam failed to initialize`) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
+
 ### SteamVR blanks the world below about 20 fps
 
 - **Observed:** a scene application rendering slower than roughly 20 fps shows a black world while its own menu panels and overlays stay visible and audio keeps playing. It looks like a rendering bug and is a frame-rate problem. Quake VR: Unleashed at 1728x1728 per eye (39 ms a frame) is the reference case.
@@ -121,7 +139,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 ### Harmony patches on Unity native methods recurse forever under FEX
 
-- **Observed:** a BepInEx mod that Harmony-patches Unity native setters (`Transform.set_*_Injected`, `GameObject.set_tag`, `Camera.ResetProjectionMatrix`) overflows the main thread's stack right after SteamVR initialises (DUSK HD VR).
+- **Observed:** a BepInEx mod that Harmony-patches Unity native setters (`Transform.set_*_Injected`, `GameObject.set_tag`, `Camera.ResetProjectionMatrix`) overflows the main thread's stack right after SteamVR initialises (DUSK HD VR, Hollow Knight VR; both use the UnityVR_Bepinex core).
 - **Workaround:** strip those patches from the plugin when the mod's features do not need them.
 - **Who:** FEX (and Harmony's native-method patching). `WINEDEBUG=+seh` alone also overflows Mono's stack under FEX.
 
@@ -144,6 +162,10 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a VR mod using MinHook to patch `d3d11.dll` crashes with exception `C000001D` (illegal instruction): Proton ARM64's DXVK is a native ARM64 library and the mod writes x86-64 trampolines into it (Halo MCC VR).
 - **Workaround:** copy Proton's x86-64 DXVK (`dxgi.dll`, `d3d11.dll`, `d3d10core.dll`) beside the game exe.
+
+### 32-bit OpenXR works through the i386 wineopenxr
+
+- **Observed:** Proton Experimental (ARM64) ships an i386 wineopenxr, and 32-bit OpenXR games on Direct3D 11 reach SteamVR through it (F.E.A.R. VR, Red Faction VR). Red Faction VR's own README calls SteamVR unsupported because Windows SteamVR has no 32-bit OpenXR runtime; on the Frame it works.
 
 ### Easy Anti-Cheat
 

@@ -2,7 +2,7 @@
 
 Everything here ran on the test headset as the `steamos` user. The shared helpers live in `~/PCVR/bin/` there; each port keeps its scripts beside its source in `~/PCVR/<Port>/` and its launch wrapper in the playable folder `~/PCVR/<Port>-game/`. Paths inside the scripts follow that convention. Copy a folder to the headset with `scp -r scripts/<slug> frame:PCVR/<Port>` and read the game's README under [games/](../games/) first.
 
-Every script starts with a comment or docstring saying what it does. Python scripts that only read untrusted files are run with `python3 -I`. Scripts marked **GPL** patch or embed fragments of a GPL project and are offered under that project's license; the rest are MIT like the repository.
+Every script starts with a comment or docstring saying what it does. Python scripts that only read untrusted files are run with `python3 -I`. Scripts marked **GPL** or **MPL-2.0** patch or embed fragments of a project under that license and are offered under it; the rest are MIT like the repository.
 
 ## common/ (`~/PCVR/bin/`)
 
@@ -115,6 +115,29 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [FrameVR_DuskHD.cs](dusk-hd-vr/FrameVR_DuskHD.cs) | BepInEx plugin source: head-oriented left stick, real menu buttons, scene probe log. Build with the .NET 4 C# compiler. |
 
 The framepad DLL pair, the uinput pad and the Mono.Cecil stripping tool are described in the game README but their source is not in this repository yet.
+
+### hollow-knight-vr ([games/hollow-knight-vr](../games/hollow-knight-vr/))
+
+| Script | What it does |
+|---|---|
+| [hk_install.sh](hollow-knight-vr/hk_install.sh) | Copies the mod into the game folder without overwriting, writes the shortcut wrapper, adds the shortcut, launches once. |
+| [hkvr-shortcut.sh](hollow-knight-vr/hkvr-shortcut.sh) | Shortcut wrapper: Hollow Knight's prefix, BepInEx and xinput overrides, uinput pad, debug marker. |
+| [hk_frame_controls.py](hollow-knight-vr/hk_frame_controls.py) | Writes the SteamVR binding (the game's Xbox layout 1:1, d-pad touch on a spare action) and selects it. |
+| [FrameVR_HK.cs](hollow-knight-vr/FrameVR_HK.cs) | BepInEx plugin source: Start/Back on the real buttons, d-pad re-assert and pulse latch, hotkey gesture removed. Build with the .NET Framework C# compiler. |
+| [hk_plugin_install.sh](hollow-knight-vr/hk_plugin_install.sh) | Installs the built plugin into `BepInEx/plugins` and relaunches. |
+| [hk_launch.sh](hollow-knight-vr/hk_launch.sh) | Launch through Steam with a BepInEx, Player.log and vrserver summary. |
+
+### red-faction-vr ([games/red-faction-vr](../games/red-faction-vr/))
+
+| Script | What it does |
+|---|---|
+| [rf_setup.sh](red-faction-vr/rf_setup.sh) | Runs the mod's Inno installer silently inside Red Faction's prefix through the wrapper's `mode=run` hook. |
+| [rfvr-shortcut.sh](red-faction-vr/rfvr-shortcut.sh) | Shortcut wrapper: Red Faction's prefix, debug marker, `mode` hooks for running other commands in the prefix. |
+| [rf_patch.py](red-faction-vr/rf_patch.py) | **MPL-2.0.** Idempotent patch: the six hand-scoped actions accept both hands, the menu action pauses under SteamVR, a `recenter` action. |
+| [container/Containerfile](red-faction-vr/container/Containerfile), [rf_build2.sh](red-faction-vr/rf_build2.sh) | The MinGW GCC 14 podman image and the full cross-build. |
+| [rf_rebuild.sh](red-faction-vr/rf_rebuild.sh), [rf_install_dll.sh](red-faction-vr/rf_install_dll.sh) | Incremental rebuild, DLL install (original kept as `.orig`), rebind, relaunch. |
+| [rf_binding.py](red-faction-vr/rf_binding.py), [rf_frame_binding.json](red-faction-vr/rf_frame_binding.json) | The Frame layout as a SteamVR OpenXR binding typed `frame_controller`. |
+| [rf_launch.sh](red-faction-vr/rf_launch.sh) | Launch through Steam, keeping the app's Index default unwritable so the custom binding loads. |
 
 ### fear-vr, l4d2-vr, portal2-vr, bendy-vr, deus-ex-hr-vr
 

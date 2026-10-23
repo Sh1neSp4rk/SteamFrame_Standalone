@@ -38,7 +38,7 @@ What that chain can and cannot carry, as found on the test headset (SteamOS 0.4.
 | Native ARM64 Linux build, OpenXR or OpenVR | Yes | Talks to SteamVR's ARM64 libraries directly; OpenGL goes through zink on Turnip. The toolchain is on the headset (gcc 15, clang 19, cmake, ninja, SDL2, OpenXR headers, OpenVR) |
 | Easy Anti-Cheat games | **No** | EAC's Linux module only exists for publishers who enabled it, and it does not run under FEX either way. Offline modes only |
 | Unity VR mods using a virtual gamepad driver (ViGEmBus) | Needs a stand-in | Proton cannot load the Windows kernel driver; DUSK HD VR got a shared-memory replacement plus a Linux uinput pad |
-| 32-bit games | Partly | Proton's i386 vrclient bridge connects (BioShock VR), but that game never presented a frame; Deus Ex HR VR works through a 64-bit helper process |
+| 32-bit games | Mostly | 32-bit OpenXR on D3D11 works through Proton Experimental's i386 wineopenxr (F.E.A.R. VR, Red Faction VR); Proton's i386 vrclient bridge connects (BioShock VR), but that game never presented a frame; Deus Ex HR VR works through a 64-bit helper process |
 
 Failure patterns seen more than once:
 
@@ -68,6 +68,8 @@ Failure patterns seen more than once:
 | [Portal 2 VR](games/portal2-vr/) | Proton, OpenVR | Working, controls unconfirmed | Shares the L4D2 binding |
 | [Bendy VR](games/bendy-vr/) | Proton, OpenVR | Working | Needs the `release-1.5` Steam branch |
 | [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Working | x86-64 vcruntime beside the host |
+| [Red Faction VR](games/red-faction-vr/) | Proton, OpenXR (32-bit) | Working | Mod patched and rebuilt for the standard layout; single-profile binding rule |
+| [Hollow Knight VR](games/hollow-knight-vr/) | Proton, OpenVR | Working | DUSK recipe plus a plugin for pause and the d-pad |
 | [Contractors VR](games/contractors/) | Proton, OpenVR | Working | Skip Unreal's bootstrapper |
 | [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK |
 | [Metal: Hellsinger VR](games/metal-hellsinger-vr/) | Proton, OpenXR | Working | One missing DLL (`mfc140u.dll`) |
@@ -100,7 +102,7 @@ Every VR mod ships bindings for Quest or Index controllers and puts jump, crouch
 | View | Map / scoreboard / inventory |
 | Grips | Never core actions; 80% squeeze to press, release below 70% |
 
-Stick deadzones are 10% for move and turn and 75% when a stick direction acts as a button. How a layout is applied depends on how the game talks to SteamVR (OpenXR suggested bindings, legacy OpenVR input, an action manifest, or the mod's own config); the guide's "Controller layout" page covers each case. Two things that cost evenings: `vrcmd --set-settings-string` neither persists nor applies a binding on the Frame (write `steamvr.vrsettings` with [vrsettings_bind.py](scripts/common/vrsettings_bind.py) and restart the VR session), and SteamVR's simulated Oculus Touch profile drops the axis3/axis4 legacy ids.
+Stick deadzones are 10% for move and turn and 75% when a stick direction acts as a button. The left d-pad is for tap actions only: the Frame driver reports a held click as short pulses that stop after about a second (see KNOWN-ISSUES). How a layout is applied depends on how the game talks to SteamVR (OpenXR suggested bindings, legacy OpenVR input, an action manifest, or the mod's own config); the guide's "Controller layout" page covers each case. Two things that cost evenings: `vrcmd --set-settings-string` neither persists nor applies a binding on the Frame (write `steamvr.vrsettings` with [vrsettings_bind.py](scripts/common/vrsettings_bind.py) and restart the VR session), and SteamVR's simulated Oculus Touch profile drops the axis3/axis4 legacy ids.
 
 ## Using this repository on a Frame
 
@@ -130,6 +132,6 @@ The ports and mods this repository builds on are separate projects with their ow
 - [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games
 - [emawind84/SelacoVR](https://github.com/emawind84/SelacoVR), [hh79/gzdoomvr](https://github.com/hh79/gzdoomvr) and jantyka's gzdoomvr lineage for the Doom-engine VR builds
 - [RippeR37/q3vr](https://github.com/RippeR37/q3vr), [vittorioromeo/quakevr](https://github.com/vittorioromeo/quakevr), [NPi2Loup/DOOM-3-BFG-VR](https://github.com/NPi2Loup/DOOM-3-BFG-VR), [Bassquake/Aliens-Versus-Predator-VR](https://github.com/Bassquake/Aliens-Versus-Predator-VR)
-- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR)
+- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), the Hollow Knight VR Enhanced and UnityVR_Bepinex authors
 - Valve for OpenVR, SteamVR and Proton; the FEX, DXVK, Mesa (zink, Turnip) and OpenXR projects
 - saphid's Frame Control, whose Steam shortcut code [steam_shortcuts.py](scripts/common/steam_shortcuts.py) is adapted from (MIT)

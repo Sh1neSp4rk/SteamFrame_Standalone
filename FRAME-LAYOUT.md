@@ -47,6 +47,7 @@ A game only deviates where it has to, and the deviation gets written down under 
 - **Pause** is always the menu button. No hidden gestures; add a plugin or patch if a mod lacks one.
 - **Recenter** is always the right stick click. If a mod insists on a combo (both sticks), keep the combo working too.
 - **Head-oriented movement** is preferred wherever we control it.
+- **Left d-pad:** the Frame driver reports a held click as ~150 ms pulses that stop after ~1 s, and its touch is one shared sensor. Bind the d-pad to tap actions only (menus, items, quicksave); a held action there needs a plugin that latches on the touch (Hollow Knight VR).
 
 ## Per-game notes (current state vs this standard)
 
@@ -60,3 +61,5 @@ A game only deviates where it has to, and the deviation gets written down under 
 | F.E.A.R. VR | SteamVR's auto layout; not yet reviewed |
 | Quake VR (Team Beef) | Left trigger = run (the crouch slot: no crouch in Quake; no sprint on stick click); left grip (80%) = two-hand weapon hold; right grip = weapon wheel; right stick click = laser-sight cycle (no recenter in the port); right bumper and X unbound (no use key); movement is off-hand-controller-oriented |
 | Selaco VR | Right bumper = secondary fire, A = use (user: both fires on the firing hand); left trigger = crouch (like the Quake games); quick save/load dropped (in the way), left d-pad up/down = use gadget / switch gadget; right grip (80%) = use/reload (+usereload); Y and left d-pad right unbound (legacy OpenVR input has only 8 button ids per hand); d-pad left = meds, view = PDA |
+| Red Faction VR | On the standard after patching the mod (actions were hand-scoped). A = laser sight, right grip (80%) = the mod's alt-fire modifier, left stick click = holster; Y, view and d-pad unbound (no more actions). Pause = menu button via the patched menu action |
+| Hollow Knight VR | Not the standard: the game's own Xbox layout 1:1 through the mod's virtual pad (A jump, X attack, B cast, Y dream nail, RT dash, LT super dash, RB quick cast, LB quick map, menu pause, view inventory, d-pad move/menus). Left stick click unbound (its action carries the d-pad touch for the FrameVR_HK plugin); grips unused |
