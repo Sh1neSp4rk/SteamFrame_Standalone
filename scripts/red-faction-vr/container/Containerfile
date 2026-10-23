@@ -1,0 +1,3 @@
+FROM docker.io/library/debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends mingw-w64 cmake ninja-build make git ca-certificates python3 && rm -rf /var/lib/apt/lists/*

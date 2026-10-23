@@ -1,0 +1,23 @@
+#!/bin/bash
+# Steam hands this script its full launch command as arguments.
+# Normal entry (mcclauncher.exe, EAC) -> run the game directly with -no-eac: FLAT, no anti-cheat.
+# "Anti-Cheat Disabled" entry        -> start the VR mod launcher instead: VR.
+# EAC is never started on the Frame: its bootstrapper can reinstall the VC++ runtime that
+# broke the Proton prefix, and EAC does not work under FEX anyway.
+a=("$@")
+for i in "${!a[@]}"; do
+  case "${a[$i],,}" in
+    *mcc-win64-shipping.exe)
+      root="${a[$i]%/*/*/*/*}"
+      a[$i]="$root/Halo_MCC_VR/HaloMCCVRLauncher.exe"
+      ;;
+    */mcclauncher.exe)
+      a[$i]="${a[$i]%/*}/MCC/Binaries/Win64/MCC-Win64-Shipping.exe"
+      a+=("-no-eac")
+      ;;
+    -no-eac)
+      unset "a[$i]"
+      ;;
+  esac
+done
+exec "${a[@]}"

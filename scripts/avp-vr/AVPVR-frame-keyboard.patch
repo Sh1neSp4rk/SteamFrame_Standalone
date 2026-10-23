@@ -1,0 +1,100 @@
+Steam Frame: fall back to the controller keyboard when SteamVR closes its own at once.
+Applies to Bassquake/Aliens-Versus-Predator-VR (GPL-2.0); this patch is offered under the same license.
+Apply with: git apply AVPVR-frame-keyboard.patch
+
+diff --git a/source/src/avp/win95/frontend/avp_menus.c b/source/src/avp/win95/frontend/avp_menus.c
+index 9bd6fce..486119b 100644
+--- a/source/src/avp/win95/frontend/avp_menus.c
++++ b/source/src/avp/win95/frontend/avp_menus.c
+@@ -2706,6 +2706,7 @@ static void OnScreenKeyboard_SteamVR(void)
+ 
+ 	if (DebouncedKeyboardInput[KEY_ESCAPE])
+ 	{
++		SDL_Log("SteamVR keyboard: Escape/Back pressed");
+ 		SteamVRKeyboard_Close();   /* Escape itself ends the field below */
+ 		OSK_SteamVR = 0;
+ 		return;
+@@ -2713,6 +2714,7 @@ static void OnScreenKeyboard_SteamVR(void)
+ 
+ 	result = SteamVRKeyboard_Poll(text, sizeof text);
+ 	if (result == 0) return;
++	if (result == -2) { OSK_SteamVR = 0; return; }  /* Frame patch: the grid keeps the field */
+ 
+ 	if (result > 0)
+ 	{
+diff --git a/source/src/steamvr_keyboard.c b/source/src/steamvr_keyboard.c
+index 390b372..33acbe6 100644
+--- a/source/src/steamvr_keyboard.c
++++ b/source/src/steamvr_keyboard.c
+@@ -55,6 +55,7 @@ typedef intptr_t (OVR_EXPORT_CALLTYPE *PFN_VR_GetGenericInterface)(const char *,
+ static char runtime_name[128];
+ static int  state;                        /* 0 = not tried, 1 = ready, -1 = unavailable */
+ static int  keyboard_open;
++static Uint64 open_ticks;                 /* Frame patch: when it was raised */
+ static struct VR_IVROverlay_FnTable *ovr_overlay;
+ static struct VR_IVRSystem_FnTable  *ovr_system;
+ static VROverlayHandle_t ovr_handle;
+@@ -134,6 +135,7 @@ int SteamVRKeyboard_Open(const char *existing, int maxChars, const char *title)
+ {
+ 	EVROverlayError e;
+ 	if (keyboard_open) return 1;
++	if (SDL_getenv("AVP_NO_STEAMVR_KEYBOARD")) return 0;  /* Frame patch: force the grid */
+ 	if (!steamvr_init()) return 0;
+ 	e = ovr_overlay->ShowKeyboardForOverlay(ovr_handle,
+ 		EGamepadTextInputMode_k_EGamepadTextInputModeNormal,
+@@ -147,11 +149,14 @@ int SteamVRKeyboard_Open(const char *existing, int maxChars, const char *title)
+ 		return 0;
+ 	}
+ 	keyboard_open = 1;
++	open_ticks = SDL_GetTicks();
++	SDL_Log("SteamVR keyboard: opened");
+ 	return 1;
+ }
+ 
+ /* Call each frame while open. Returns 0 while the keyboard is up, 1 when the player
+-   pressed Done (text in out), -1 when it was closed without Done. */
++   pressed Done (text in out), -1 when it was closed without Done, -2 when SteamVR
++   dropped it at once and the caller should switch to its own grid (Frame patch). */
+ int SteamVRKeyboard_Poll(char *out, int outSize)
+ {
+ 	struct VREvent_t ev;
+@@ -159,6 +164,7 @@ int SteamVRKeyboard_Poll(char *out, int outSize)
+ 
+ 	if (!keyboard_open) return -1;
+ 	while (ovr_overlay->PollNextOverlayEvent(ovr_handle, &ev, sizeof ev)) {
++		SDL_Log("SteamVR keyboard: overlay event %u", (unsigned)ev.eventType);
+ 		if (ev.eventType == OVR_EVENT_KEYBOARD_DONE && result == 0) {
+ 			ovr_overlay->GetKeyboardText(out, (uint32_t)outSize);
+ 			out[outSize - 1] = '\0';
+@@ -170,11 +176,22 @@ int SteamVRKeyboard_Poll(char *out, int outSize)
+ 	/* Our own connection's queue: nothing else reads it, so draining it costs
+ 	   nobody an event. */
+ 	while (ovr_system->PollNextEvent(&ev, sizeof ev)) {
++		if (ev.eventType >= 1200 && ev.eventType < 1300)  /* keyboard events */
++			SDL_Log("SteamVR keyboard: system event %u overlay=%llu (ours %llu)", (unsigned)ev.eventType,
++				(unsigned long long)ev.data.keyboard.overlayHandle, (unsigned long long)ovr_handle);
+ 		if (ev.eventType == OVR_EVENT_KEYBOARD_CLOSED_GLOBAL && result == 0
+ 		    && ev.data.keyboard.overlayHandle == ovr_handle)
+ 			result = -1;
+ 	}
+-	if (result) keyboard_open = 0;
++	if (result) { keyboard_open = 0; SDL_Log("SteamVR keyboard: poll result %d", result); }
++	/* Frame patch: closed by SteamVR itself almost at once (no Done, no Back).
++	   The Frame's SteamVR does this, so latch it off and let the grid take over. */
++	if (result < 0 && SDL_GetTicks() - open_ticks < 3000) {
++		SDL_Log("SteamVR keyboard: closed by SteamVR after %llu ms, switching to the controller grid",
++			(unsigned long long)(SDL_GetTicks() - open_ticks));
++		state = -1;
++		return -2;
++	}
+ 	return result;
+ }
+ 
+@@ -182,6 +199,7 @@ int SteamVRKeyboard_Poll(char *out, int outSize)
+ void SteamVRKeyboard_Close(void)
+ {
+ 	if (!keyboard_open) return;
++	SDL_Log("SteamVR keyboard: Close() called");
+ 	ovr_overlay->HideKeyboard();
+ 	keyboard_open = 0;
+ }

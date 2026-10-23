@@ -1,0 +1,15 @@
+#!/bin/bash
+# Steam hands this script its full launch command as arguments.
+# Contractors.exe is Unreal's "BootstrapPackagedGame" launcher: it checks the
+# VC++ / DirectX redistributables and, when it is not satisfied, pops a Yes/No
+# dialog that is invisible in VR, so the real game never starts on the Frame.
+# Skip the bootstrapper and run the shipping executable directly.
+a=("$@")
+for i in "${!a[@]}"; do
+  case "${a[$i]}" in
+    */ContractorsVR/Contractors.exe)
+      a[$i]="${a[$i]%/*}/Contractors_UE4_22/Binaries/Win64/Contractors_UE4_22_Steam-Win64-Shipping.exe"
+      ;;
+  esac
+done
+exec "${a[@]}"

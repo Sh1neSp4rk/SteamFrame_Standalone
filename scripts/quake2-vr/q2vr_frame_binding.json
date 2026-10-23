@@ -1,0 +1,249 @@
+{
+  "name": "Quake II VR - Steam Frame layout",
+  "description": "Left hand: stick move, grip run, trigger crouch, bumper jump, d-pad left/right help/inventory, view menu. Right: trigger fire, A crouch, B jump, stick turn + weapons, menu.",
+  "controller_type": "frame_controller",
+  "category": "openxr",
+  "interaction_profile": "/interaction_profiles/oculus/touch_controller",
+  "options": {
+    "mirror_actions": false
+  },
+  "bindings": {
+    "/actions/gameplay": {
+      "chords": [],
+      "eyetracking": [],
+      "haptics": [
+        {
+          "output": "/actions/gameplay/out/haptic",
+          "path": "/user/hand/left/output/haptic"
+        },
+        {
+          "output": "/actions/gameplay/out/haptic",
+          "path": "/user/hand/right/output/haptic"
+        }
+      ],
+      "poses": [
+        {
+          "output": "/actions/gameplay/in/grip_pose",
+          "path": "/user/hand/left/pose/openxr_aim"
+        },
+        {
+          "output": "/actions/gameplay/in/grip_pose",
+          "path": "/user/hand/right/pose/openxr_aim"
+        },
+        {
+          "output": "/actions/gameplay/in/aim_pose",
+          "path": "/user/hand/left/pose/openxr_aim"
+        },
+        {
+          "output": "/actions/gameplay/in/aim_pose",
+          "path": "/user/hand/right/pose/openxr_aim"
+        }
+      ],
+      "sources": [
+        {
+          "path": "/user/hand/left/input/thumbstick",
+          "mode": "joystick",
+          "inputs": {
+            "position": {
+              "output": "/actions/gameplay/in/thumbstick"
+            }
+          }
+        },
+        {
+          "path": "/user/hand/left/input/thumbstick",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/thumbstick_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/left/input/thumbstick",
+          "mode": "button",
+          "inputs": {
+            "touch": {
+              "output": "/actions/gameplay/in/thumbstick_touch"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0
+          }
+        },
+        {
+          "path": "/user/hand/right/input/thumbstick",
+          "mode": "joystick",
+          "inputs": {
+            "position": {
+              "output": "/actions/gameplay/in/thumbstick"
+            }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/thumbstick",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/thumbstick_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/right/input/thumbstick",
+          "mode": "button",
+          "inputs": {
+            "touch": {
+              "output": "/actions/gameplay/in/thumbstick_touch"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0
+          }
+        },
+        {
+          "path": "/user/hand/left/input/grip",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/trigger"
+            }
+          },
+          "parameters": {
+            "click_activate_threshold": "0.8",
+            "click_deactivate_threshold": "0.7",
+            "haptic_amplitude": 0
+          }
+        },
+        {
+          "path": "/user/hand/left/input/trigger",
+          "mode": "trigger",
+          "inputs": {
+            "pull": {
+              "output": "/actions/gameplay/in/squeeze"
+            }
+          }
+        },
+        {
+          "path": "/user/hand/left/input/bumper",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/b_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/left/input/dpad_left",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/x_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/left/input/dpad_right",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/y_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/left/input/view",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/menu_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/right/input/trigger",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/trigger"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0
+          }
+        },
+        {
+          "path": "/user/hand/right/input/grip",
+          "mode": "trigger",
+          "inputs": {
+            "pull": {
+              "output": "/actions/gameplay/in/squeeze"
+            }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/a",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/a_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/right/input/b",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/b_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        },
+        {
+          "path": "/user/hand/right/input/menu",
+          "mode": "button",
+          "inputs": {
+            "click": {
+              "output": "/actions/gameplay/in/menu_click"
+            }
+          },
+          "parameters": {
+            "haptic_amplitude": 0,
+            "force_input": "click"
+          }
+        }
+      ]
+    }
+  }
+}
