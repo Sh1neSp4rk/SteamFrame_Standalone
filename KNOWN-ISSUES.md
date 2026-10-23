@@ -50,7 +50,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 ### Apps started from a non-Steam shortcut may need steam_appid.txt
 
-- **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix (Hollow Knight VR) fails its Steam init (`Steam failed to initialize`) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
+- **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix fails its Steam init (`Steam failed to initialize` in Hollow Knight VR, `[Fatal] Stage 2 Boot Failure: Steamworks is not initialized` in Circuit Superstars VR) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
 
 ### SteamVR blanks the world below about 20 fps
 
@@ -139,7 +139,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 ### Harmony patches on Unity native methods recurse forever under FEX
 
-- **Observed:** a BepInEx mod that Harmony-patches Unity native setters (`Transform.set_*_Injected`, `GameObject.set_tag`, `Camera.ResetProjectionMatrix`) overflows the main thread's stack right after SteamVR initialises (DUSK HD VR, Hollow Knight VR; both use the UnityVR_Bepinex core).
+- **Observed:** a BepInEx mod that Harmony-patches Unity native setters (`Transform.set_*_Injected`, `GameObject.set_tag`, `Camera.ResetProjectionMatrix`) overflows the main thread's stack right after SteamVR initialises (DUSK HD VR, Hollow Knight VR, Circuit Superstars VR; all three use the UnityVR_Bepinex core).
 - **Workaround:** strip those patches from the plugin when the mod's features do not need them.
 - **Who:** FEX (and Harmony's native-method patching). `WINEDEBUG=+seh` alone also overflows Mono's stack under FEX.
 
@@ -147,6 +147,15 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a mod that drives the game through a virtual Xbox pad via the ViGEmBus driver never produces input, because Proton cannot load the driver. Unity additionally ignores an XInput device unless a real game-controller device exists in the prefix.
 - **Workaround:** a `ViGEmClient.dll` and `xinput1_3.dll` pair that share pad state in memory, plus an idle Linux uinput Xbox 360 pad so Wine reports a device ([games/dusk-hd-vr](games/dusk-hd-vr/)).
+
+### Steam Input's virtual pad takes XInput slot 0 through Wine's xinput1_4
+
+- **Observed:** a Rewired-based Unity game (Circuit Superstars VR) loads Wine's own `xinput1_4.dll`, where Steam Input's virtual pad for the shortcut enumerates first, so a second pad provided through an `xinput1_3.dll` shim (Unity's native layer) lands in slot 1 and the game seats the player at pad 2. Steam Input's pad also goes quiet once SteamVR takes the Frame controllers.
+- **Workaround:** serve the shim under every XInput name (`xinput1_1`, `xinput1_2`, `xinput1_3`, `xinput1_4`, `xinput9_1_0`) with matching `WINEDLLOVERRIDES`, so the game sees one pad in slot 0 ([cs_xinput14.sh](scripts/circuit-superstars-vr/cs_xinput14.sh)).
+
+### UnityVR_Bepinex mods without a VR-to-pad bridge
+
+- **Observed:** older UnityVR_Bepinex cores have no `vrControllersSupport`; a mod built on one (Circuit Superstars VR) is gamepad-only and gets no input from the Frame controllers once SteamVR owns them. A BepInEx plugin that copies the mod's SteamVR action set onto a ViGEm pad every frame bridges it ([FrameVR_CS.cs](scripts/circuit-superstars-vr/FrameVR_CS.cs)). The mod's `UpdateSpeedHaptics` also throws a NullReferenceException every frame without a bHaptics vest; log noise only.
 
 ### ARM64 runtime DLLs in the prefix
 

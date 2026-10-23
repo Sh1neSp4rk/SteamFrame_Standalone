@@ -143,6 +143,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#selaco" data-guide="selaco"><span class="dot working"></span>Selaco VR</a>
   <a href="#redfaction" data-guide="redfaction"><span class="dot working"></span>Red Faction VR</a>
   <a href="#hollowknight" data-guide="hollowknight"><span class="dot working"></span>Hollow Knight VR</a>
+  <a href="#circuitsuperstars" data-guide="circuitsuperstars"><span class="dot working"></span>Circuit Superstars VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
@@ -1371,6 +1372,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Selaco VR</td><td>Confirmed in the headset 2026-10-22. Right: trigger primary fire, bumper secondary fire (your request: both fires on the firing hand), A use, B reload, X flashlight, menu pause, stick snap turn 45° / up-down weapons / click recenter, grip (80%) use-or-reload (your request). Left: trigger crouch (as in the Quake games), bumper jump, stick click sprint, grip (80%) two-hand weapon hold, d-pad up/down use gadget / switch gadget, d-pad left meds, view PDA. Quick save/load dropped from the controls (they got in the way; the menu has them). Y and d-pad right unbound (legacy input runs out of ids).</td></tr>
 <tr><td>Red Faction VR</td><td>On the standard after patching the mod (its actions were hand-scoped; see its page). Right: trigger fire, bumper alt-fire, A laser sight, B reload, X flashlight, menu pause, stick click recenter, grip (80%) the mod's alt-fire modifier. Left: trigger crouch, bumper jump, grip (80%) use/two-hand, stick click holster. Y, view, d-pad free. Confirmed 2026-10-23.</td></tr>
 <tr><td>Hollow Knight VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the mod's virtual pad (A jump, X attack, B cast, Y dream nail, RT dash, LT super dash, RB quick cast, LB quick map, menu pause, view inventory, d-pad move/menus). Left stick click unbound (its action carries the d-pad touch); grips unused. Needs the FrameVR_HK plugin for Start/Back and the d-pad (see its page). Confirmed 2026-10-23.</td></tr>
+<tr><td>Circuit Superstars VR</td><td>Not the standard: the game's own Xbox layout 1:1 through the FrameVR_CS virtual pad (the mod has no motion controls). Bumpers LB/RB, triggers, sticks, d-pad, menu Start (mod: double-tap first-person, hold recenter), view Back; grips unused. Confirmed 2026-10-23.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
@@ -2048,6 +2050,46 @@ ssh frame "touch ~/PCVR/SelacoVR/dev.test"   # next launch logs VRBTN L=... R=..
 <h2>Undo</h2>
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 2289186113"
 # the flat game is untouched by the mod unless BepInEx is forced on; to remove the mod, delete BepInEx/, winhttp.dll, doorstop_config.ini, xinput1_3.dll, steam_appid.txt and verify files in Steam</code></pre>
+</article>
+
+<!-- ===================== CIRCUIT SUPERSTARS VR ===================== -->
+<article id="circuitsuperstars" class="guide" data-title="Circuit Superstars VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Circuit Superstars VR: a gamepad-only Unity mod, driven by the Frame controllers</h1>
+  <p class="lede">Astienth's VR mod for the top-down racer is the third UnityVR_Bepinex mod on this headset after DUSK HD VR and Hollow Knight VR, and by design it has no motion-controller support: it wants an Xbox pad. The Frame's controllers are an Xbox pad's worth of buttons, so a 100-line plugin reads the mod's SteamVR actions and drives a virtual pad. Two smaller things got in the way first: Steamworks refusing to initialise under a shortcut, and the game seating the player at pad 2.</p>
+  <dl class="facts">
+    <dt>Mod</dt><dd>github.com/Astienth/Circuit_Superstars_VR 1.0.0 (BepInEx 5.4.22 + UnityVR_Bepinex post-2020 core + SteamVR Unity plugin), OpenVR</dd>
+    <dt>Game data</dt><dd>Circuit Superstars (Steam 1097130, Unity URP, Rewired input, 64-bit Windows build)</dd>
+    <dt>Install</dt><dd>~/PCVR/CircuitSuperstarsVR (dl, extracted, cs_*.sh/py, FrameVR_CS.cs/dll, the stripped core)</dd>
+    <dt>Steam entry</dt><dd>"Circuit Superstars VR" 3624666961, Proton Experimental (ARM64) in the game's own prefix, red CIRCUIT SUPERSTARS VR art; the library entry stays the flat game</dd>
+    <dt>Set up</dt><dd>2026-10-23; controls = the game's own Xbox layout, 1:1</dd>
+  </dl>
+</header>
+
+<h2>Install</h2>
+<p>The zip unpacks into the game folder. As with its siblings, the plugin is Costura-packed around the UnityVR_Bepinex core, whose Harmony patches on native methods recurse under FEX until the stack overflows: the core is extracted, <code>StripNativePatches.exe</code> removes the four offending patches, and the clean copy goes into <code>circuit-superstars_Data/Managed</code> under its assembly name so Mono resolves it before Costura's embedded copy. The "Circuit Superstars VR" shortcut wrapper sets <code>WINEDLLOVERRIDES=winhttp=n,b</code> so BepInEx loads only for the VR entry. The first launch died at boot with <code>[Fatal] Stage 2 Boot Failure: Steamworks is not initialized</code>; a <code>steam_appid.txt</code> holding 1097130 in the game folder fixes it, the same as Hollow Knight.</p>
+<pre><code>ssh frame "bash ~/PCVR/CircuitSuperstarsVR/cs_launch.sh 60"     # launch through Steam; BepInEx / Player / vrserver log summary</code></pre>
+
+<h2>Controls: build the pad the mod expects</h2>
+<p>Steam Input hands the game an XInput pad at boot, but it goes quiet once SteamVR takes the Frame controllers, and this older core has no VR-to-pad bridge (<code>vrControllersSupport</code> arrived in later cores). So the Frame gets the Hollow Knight chain plus its own bridge:</p>
+<ol>
+<li><strong>FrameVR_CS plugin.</strong> A BepInEx plugin compiled with the .NET Framework csc against the game's assemblies. It waits for <code>SteamVR_Input.initialized</code>, creates an Xbox 360 pad through the ViGEm client API, and every frame copies the mod's default action set onto it: A/B/X/Y, the <code>LeftGrip</code>/<code>RightGrip</code> actions to LB/RB, triggers, both sticks and their clicks, the d-pad, Start and Back.</li>
+<li><strong>framepad</strong> stands in for ViGEm, which Proton cannot load: DUSK's <code>ViGEmClient.dll</code> writes the pad state to shared memory, <code>uinput_pad</code> mirrors it as a Linux controller, and an XInput shim serves it to the game.</li>
+<li><strong>One pad, player 1.</strong> With the shim only replacing <code>xinput1_3</code>, the game seated the player at pad 2: Rewired loads Wine's own <code>xinput1_4</code>, where Steam Input's virtual pad enumerates first. The shim is served under every XInput name (1_1, 1_2, 1_3, 1_4, 9_1_0) with matching overrides, so the game sees exactly one controller in slot 0.</li>
+</ol>
+<p><code>cs_frame_controls.py</code> writes the Frame binding (bumpers feed the grip actions, menu is Start, view is Back, grips unused) and selects it for both the app id the game connects as (1097130, from steam_appid.txt) and the shortcut id. The mod's own controls ride on Start: double-tap for the first-person camera, hold to recenter.</p>
+<pre><code>ssh frame "bash ~/PCVR/CircuitSuperstarsVR/cs_pad.sh"      # (re)install the pad chain + plugin + binding and relaunch</code></pre>
+
+<h2>Caveats</h2>
+<ul>
+<li>The mod's speed-haptics update throws a NullReferenceException every frame without a bHaptics vest. Log noise only.</li>
+<li>Steam Input still creates its pads for the shortcut; they are simply invisible to the game through the shim.</li>
+</ul>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3624666961"
+# to remove the mod: delete BepInEx/, winhttp.dll, doorstop_config.ini, steam_appid.txt, xinput*.dll and the Managed/StreamingAssets files it added (list in extracted/), or verify files in Steam</code></pre>
 </article>
 
 </main>

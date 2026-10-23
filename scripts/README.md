@@ -127,6 +127,17 @@ The framepad DLL pair, the uinput pad and the Mono.Cecil stripping tool are desc
 | [hk_plugin_install.sh](hollow-knight-vr/hk_plugin_install.sh) | Installs the built plugin into `BepInEx/plugins` and relaunches. |
 | [hk_launch.sh](hollow-knight-vr/hk_launch.sh) | Launch through Steam with a BepInEx, Player.log and vrserver summary. |
 
+### circuit-superstars-vr ([games/circuit-superstars-vr](../games/circuit-superstars-vr/))
+
+| Script | What it does |
+|---|---|
+| [csvr-shortcut.sh](circuit-superstars-vr/csvr-shortcut.sh) | Shortcut wrapper: the game's prefix, BepInEx and every-XInput-name overrides, uinput pad, debug marker. |
+| [cs_pad.sh](circuit-superstars-vr/cs_pad.sh) | Installs the ViGEm client, the framepad stand-in, the xinput shim, FrameVR_CS.dll and the binding, then relaunches. |
+| [cs_xinput14.sh](circuit-superstars-vr/cs_xinput14.sh) | Serves the shim under every XInput name so the game sees one pad in slot 0. |
+| [cs_frame_controls.py](circuit-superstars-vr/cs_frame_controls.py) | Writes the SteamVR binding (the game's Xbox layout 1:1) and selects it for both app keys. |
+| [FrameVR_CS.cs](circuit-superstars-vr/FrameVR_CS.cs) | BepInEx plugin source: copies the mod's SteamVR actions onto a virtual Xbox pad every frame. Build with the .NET Framework C# compiler. |
+| [cs_launch.sh](circuit-superstars-vr/cs_launch.sh) | Launch through Steam with a log summary. |
+
 ### red-faction-vr ([games/red-faction-vr](../games/red-faction-vr/))
 
 | Script | What it does |

@@ -70,6 +70,7 @@ Failure patterns seen more than once:
 | [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Working | x86-64 vcruntime beside the host |
 | [Red Faction VR](games/red-faction-vr/) | Proton, OpenXR (32-bit) | Working | Mod patched and rebuilt for the standard layout; single-profile binding rule |
 | [Hollow Knight VR](games/hollow-knight-vr/) | Proton, OpenVR | Working | DUSK recipe plus a plugin for pause and the d-pad |
+| [Circuit Superstars VR](games/circuit-superstars-vr/) | Proton, OpenVR | Working | Gamepad-only mod; a plugin drives a virtual pad from the SteamVR actions |
 | [Contractors VR](games/contractors/) | Proton, OpenVR | Working | Skip Unreal's bootstrapper |
 | [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK |
 | [Metal: Hellsinger VR](games/metal-hellsinger-vr/) | Proton, OpenXR | Working | One missing DLL (`mfc140u.dll`) |
@@ -132,6 +133,6 @@ The ports and mods this repository builds on are separate projects with their ow
 - [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games
 - [emawind84/SelacoVR](https://github.com/emawind84/SelacoVR), [hh79/gzdoomvr](https://github.com/hh79/gzdoomvr) and jantyka's gzdoomvr lineage for the Doom-engine VR builds
 - [RippeR37/q3vr](https://github.com/RippeR37/q3vr), [vittorioromeo/quakevr](https://github.com/vittorioromeo/quakevr), [NPi2Loup/DOOM-3-BFG-VR](https://github.com/NPi2Loup/DOOM-3-BFG-VR), [Bassquake/Aliens-Versus-Predator-VR](https://github.com/Bassquake/Aliens-Versus-Predator-VR)
-- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), the Hollow Knight VR Enhanced and UnityVR_Bepinex authors
+- sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), Astienth (Circuit_Superstars_VR, UnityVR_Bepinex), the Hollow Knight VR Enhanced authors, Nefarius (ViGEm client)
 - Valve for OpenVR, SteamVR and Proton; the FEX, DXVK, Mesa (zink, Turnip) and OpenXR projects
 - saphid's Frame Control, whose Steam shortcut code [steam_shortcuts.py](scripts/common/steam_shortcuts.py) is adapted from (MIT)
