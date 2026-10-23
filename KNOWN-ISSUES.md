@@ -46,11 +46,18 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed (Red Faction VR):** SteamVR builds a Proton OpenXR app's input context from auto-generated defaults in `~/.config/openvr/config/openxr/steam.app.<id>_<type>_N_binding.json`, rewritten every launch, and only honours a user-selected custom binding when that context holds a single interaction profile. An app that suggests both Touch and Index bindings keeps its defaults. Making the Index default unwritable (a read-only `{}`) produces `SetXrInputConfig failed. Unable to write` and `Loading 1 bindings`, after which the custom file applies.
 - A custom file typed `controller_type: oculus_touch` is treated as Touch paths and pushed through the Frame remap, which drives each hand's trigger and bumper from the one Touch trigger; type it `frame_controller` instead.
 - A file carrying a haptic entry for an action the app does not define (`Unknown action ... when loading binding file`) is dropped whole; keep `"haptics": []`.
+- **Without a VR restart:** an API layer that forwards only the game's Touch suggestion from `xrSuggestInteractionProfileBindings` ([tools/frame-quadfix](tools/frame-quadfix/), `FRAMEXR_PROFILES`) keeps the context at one profile, and a `frame_controller`-typed binding written over the auto-generated `steam.app.<id>_oculus_touch_0_binding.json` and made read-only is loaded at the next launch (Unreal Revived VR). No `steamvr.vrsettings` edit and no session restart.
 - **Who:** Valve (SteamVR OpenXR input for Proton apps).
 
 ### Apps started from a non-Steam shortcut may need steam_appid.txt
 
 - **Observed:** a Steamworks game launched through a non-Steam shortcut in its own prefix fails its Steam init (`Steam failed to initialize` in Hollow Knight VR, `[Fatal] Stage 2 Boot Failure: Steamworks is not initialized` in Circuit Superstars VR) until a `steam_appid.txt` with the app id sits in the game folder. The app then connects to SteamVR as `steam.app.<real id>`, while bindings keyed on the shortcut id still apply.
+
+### Per-eye XrCompositionLayerQuad pairs are rejected
+
+- **Observed:** a Proton OpenXR game that submits its 2D panel as two quad layers, `eyeVisibility` LEFT and RIGHT, the right one from slice 1 of an `arraySize=2` swapchain (Unreal Revived VR's menu and HUD), has every such `xrEndFrame` rejected by SteamVR on the Frame: `compositor failed EndFrame()`, `XR_ERROR_POSE_INVALID` (-39), with a unit-length quaternion. The panel shows on the monitor and in theater mode, never in the headset.
+- **Workaround:** an implicit OpenXR API layer that shows the LEFT quad to both eyes and drops the RIGHT one ([tools/frame-quadfix](tools/frame-quadfix/)); zero rejected frames afterwards.
+- **Who:** Valve (SteamVR's OpenXR compositor on the Frame, or wineopenxr's quad-layer translation).
 
 ### Identical full-bounds images to both eyes do not fuse on the Frame
 
@@ -171,6 +178,22 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** Halo MCC's Steam install script runs the Easy Anti-Cheat setup, whose bundled Visual C++ redistributable writes Microsoft x86-64 runtime DLLs into `system32`. Wine then cannot boot the prefix (`Loading library ucrtbase.dll ... failed (error c000007b)`), and every launch dies in three seconds. "Verify integrity" can reapply it.
 - **Who:** Valve (Proton on ARM64 should protect its ARM64 system DLLs from x86-64 redistributables).
+
+### Wine's built-in d3dcompiler_47 rejects SV_ClipDistance
+
+- **Observed:** a game that compiles HLSL at runtime through `d3dcompiler_47` (Unreal Revived's D3D12 renderer, `Scene.vert`) gets a failed compile from Wine's built-in vkd3d-shader on `SV_ClipDistance`, then crashes dereferencing the missing shader right after the VR session begins.
+- **Workaround:** Microsoft's x64 `d3dcompiler_47.dll` from a Windows installation next to the exe with `WINEDLLOVERRIDES=d3dcompiler_47=n,b`. The DLL is Microsoft's and is not redistributed here.
+- **Who:** Wine / vkd3d-shader.
+
+### Inno Setup "x64compatible" installers refuse Proton's ARM64 prefix
+
+- **Observed:** an installer with `ArchitecturesAllowed=x64compatible` asks Windows which machine types it can run; Proton's ARM64 Wine answers "x86 and Arm64" even with the prefix set to Windows 11, so setup quits with "does not support the version of Windows" (Unreal Revived 0.9.0). Installers whose work is done in PowerShell scripts cannot run in the prefix either.
+- **Workaround:** run the installer on a Windows PC with the same target paths the prefix uses, copy the result into the prefix, then remove it on the PC.
+- **Who:** Wine (reporting x64 emulation capability on ARM64).
+
+### Engines that leave a crash flag open a dialog nobody can see
+
+- **Observed:** Unreal 227 leaves `System64\Running.ini` after a crash and opens a "not shut down properly" recovery dialog at the next start, invisible in VR. A launch wrapper that deletes the file first avoids it.
 
 ### Mods that patch Direct3D in memory need x86-64 DXVK
 

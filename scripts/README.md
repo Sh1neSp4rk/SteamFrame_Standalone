@@ -16,6 +16,9 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
 | [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. |
 | [flatvr_setup.sh](common/flatvr_setup.sh) | Applies that split to DUSK, Left 4 Dead 2, Portal 2 and Bendy. |
+| [vr_audit2.py](common/vr_audit2.py) | Audits every VR shortcut for how it depends on a Steam game install: path reference, symlink, hard link, or the game's Proton prefix (which Steam deletes on uninstall). |
+
+The OpenXR API layer for Proton games (per-eye quad layers, single interaction profile) lives in [tools/frame-quadfix](../tools/frame-quadfix/).
 
 ## Per game
 
@@ -137,6 +140,15 @@ The framepad DLL pair, the uinput pad and the Mono.Cecil stripping tool are desc
 | [cs_frame_controls.py](circuit-superstars-vr/cs_frame_controls.py) | Writes the SteamVR binding (the game's Xbox layout 1:1) and selects it for both app keys. |
 | [FrameVR_CS.cs](circuit-superstars-vr/FrameVR_CS.cs) | BepInEx plugin source: copies the mod's SteamVR actions onto a virtual Xbox pad every frame. Build with the .NET Framework C# compiler. |
 | [cs_launch.sh](circuit-superstars-vr/cs_launch.sh) | Launch through Steam with a log summary. |
+
+### unreal-revived-vr ([games/unreal-revived-vr](../games/unreal-revived-vr/))
+
+| Script | What it does |
+|---|---|
+| [ur_setup.sh](unreal-revived-vr/ur_setup.sh) | Downloads and verifies the installer, adds the shortcut with its own Proton prefix, mirrors Steam's Unreal Gold at `C:\Unreal` for the installer. |
+| [urvr-shortcut.sh](unreal-revived-vr/urvr-shortcut.sh) | Shortcut wrapper: own prefix, `d3dcompiler_47` override, deletes `Running.ini`, `mode` hooks for running other commands in the prefix. |
+| [ur_launch.sh](unreal-revived-vr/ur_launch.sh) | First run points the shortcut at the exe and copies the x86-64 VC++ runtime; launches with a game, xrclient, vrserver and Proton log summary. |
+| [ur_controls.py](unreal-revived-vr/ur_controls.py), [ur_frame_binding.json](unreal-revived-vr/ur_frame_binding.json) | The Frame binding written over the auto-generated Touch default (read-only), the `User.ini` binds and `VRAimMode=1`. |
 
 ### red-faction-vr ([games/red-faction-vr](../games/red-faction-vr/))
 

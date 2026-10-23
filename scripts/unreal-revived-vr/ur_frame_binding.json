@@ -1,0 +1,229 @@
+{
+   "name": "Unreal Revived VR - Steam Frame layout",
+   "description": "R: trigger fire, bumper alt-fire, A use item, B next item, X translator, menu pause, stick click recenter. L: trigger crouch, bumper jump, stick click / d-pad left previous item, d-pad up/down weapons, view translator.",
+   "controller_type": "frame_controller",
+   "category": "openxr",
+   "interaction_profile": "/interaction_profiles/oculus/touch_controller",
+   "options": {
+      "mirror_actions": false
+   },
+   "bindings": {
+      "/actions/revived_motion": {
+         "chords": [],
+         "eyetracking": [],
+         "haptics": [],
+         "poses": [
+            {
+               "output": "/actions/revived_motion/in/aim",
+               "path": "/user/hand/left/pose/openxr_aim"
+            },
+            {
+               "output": "/actions/revived_motion/in/grip",
+               "path": "/user/hand/left/pose/openxr_grip"
+            },
+            {
+               "output": "/actions/revived_motion/in/aim",
+               "path": "/user/hand/right/pose/openxr_aim"
+            },
+            {
+               "output": "/actions/revived_motion/in/grip",
+               "path": "/user/hand/right/pose/openxr_grip"
+            }
+         ],
+         "sources": [
+            {
+               "path": "/user/hand/left/input/thumbstick",
+               "mode": "joystick",
+               "inputs": {
+                  "position": {
+                     "output": "/actions/revived_motion/in/stick"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/right/input/thumbstick",
+               "mode": "joystick",
+               "inputs": {
+                  "position": {
+                     "output": "/actions/revived_motion/in/stick"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/thumbstick",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/stick_click"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/thumbstick",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/stick_click"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/left/input/trigger",
+               "mode": "trigger",
+               "inputs": {
+                  "pull": {
+                     "output": "/actions/revived_motion/in/trigger"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/right/input/trigger",
+               "mode": "trigger",
+               "inputs": {
+                  "pull": {
+                     "output": "/actions/revived_motion/in/trigger"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/bumper",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/squeeze_click"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/bumper",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/squeeze_click"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/a",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/primary"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/b",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/secondary"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/x",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/view"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/right/input/menu",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/menu"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/left/input/view",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/view"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/left/input/dpad_up",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/secondary"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/left/input/dpad_down",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/primary"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            },
+            {
+               "path": "/user/hand/left/input/dpad_left",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/revived_motion/in/stick_click"
+                  }
+               },
+               "parameters": {
+                  "force_input": "click",
+                  "haptic_amplitude": 0
+               }
+            }
+         ]
+      }
+   }
+}
