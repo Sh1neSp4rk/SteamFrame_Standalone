@@ -131,6 +131,23 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed:** in Quake VR: Unleashed any bloom amount, even 0.08, turned the eye images black through zink while the game ran at 72 Hz and its menus and hand pointers drew normally. Caught with mirror screenshots with the headset awake. Not traced further.
 - **Who:** unknown; the mod's bloom pass or zink.
 
+### Vulkan on Turnip: multi-draw indirect costs about 80 ms a frame
+
+- **Observed:** a Vulkan renderer that batches level geometry into indirect multi-draws (JKXRL, Jedi Academy's `t1_sour`) spent about 80 ms a frame on the Frame's Turnip driver, 10 to 12 fps. The same scene through the renderer's non-indirect path takes about 5 ms at full resolution. Measured with the headset worn from the renderer's own GPU timing.
+- **Workaround:** use the non-indirect draw path (`JKXR_NO_MDI=1` in [jk_port.py](scripts/jedi-knight-vr/jk_port.py)).
+- **Who:** Mesa (Turnip).
+
+### Vulkan on Turnip: tiled rendering costs 40 to 50 µs per model draw
+
+- **Observed:** in model-heavy scenes (Jedi Outcast's `kejim_post`, 300 to 1,800 model draws a frame) the GPU's normal tiled (GMEM) mode cost 40 to 50 µs per draw, 48 ms a frame. `TU_DEBUG=sysmem` (render straight to memory) brought it to 11 ms (max 98 to 22), but slows a light scene (Academy's `t1_sour`) from 5 to 12 ms.
+- **Workaround:** choose the mode per game: sysmem for Outcast, tiled for Academy. Resolution, model detail, GPU skinning and effects made little difference either way.
+- **Who:** Mesa (Turnip tile scheduling); renderer authors can batch fewer, larger draws.
+
+### Quad layers honour the texture's alpha
+
+- **Observed:** a menu quad submitted with `XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT` and menu art with partial alpha showed the world through its dark parts (JKXRL's "green screen" menus). SteamVR applies the alpha as the spec says; other runtimes the port was written against evidently did not.
+- **Workaround:** submit the panel opaque.
+
 ### Framebuffer limits
 
 - **Observed:** a 3456x3456 8x multisampled framebuffer cannot be allocated (`VR: incomplete multisample framebuffer`, black screen) in Quake II VR's shipped config. 1728x1728 with 2x MSAA works.
@@ -276,7 +293,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 ## Native ARM64 builds
 
-- `/usr/lib/libopenxr_loader.a` is a 14 KB stub, and `sdl2-config --libs` puts `-L/usr/lib` first, so `-lopenxr_loader` links the stub and every `xr*` symbol is undefined. Link `/opt/steamvr/bin/linuxarm64/libopenxr_loader.so` by full path with an rpath.
+- `/usr/lib/libopenxr_loader.a` is a 14 KB stub, and `sdl2-config --libs` puts `-L/usr/lib` first, so `-lopenxr_loader` links the stub and every `xr*` symbol is undefined. CMake's `find_library` picks the same archive (JKXRL). Link `/opt/steamvr/bin/linuxarm64/libopenxr_loader.so` by full path with an rpath, or pass it as `OPENXR_LOADER_LIBRARY`.
 - The system OpenXR headers are 1.1.40; projects needing newer extensions bring their own.
 - GCC 15 defaults to C23: `true`/`false` are keywords, K&R prototypes and implicit `int` are errors. `-std=gnu99` or `-std=gnu17`, `-fcommon`, `-fpermissive` get old engines compiling.
 - A plain `inline` function used from another translation unit links on MSVC and not on GNU C99 (no external definition); RealRTCW's game module loaded with an undefined symbol and the campaign died on "VM_Create on game failed". Check every module with `ldd -r x.so | grep 'undefined symbol'`.

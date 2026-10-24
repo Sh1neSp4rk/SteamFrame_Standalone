@@ -64,6 +64,7 @@ Failure patterns seen more than once:
 | [Selaco VR](games/selaco-vr/) | Native, OpenVR | Working | Windows build dies under FEX; legacy-input binding |
 | [Aliens versus Predator VR](games/avp-vr/) | Native, OpenXR | Working | First native port; keyboard patch |
 | [Counter-Strike VR](games/counter-strike-vr/) | Native, OpenXR | Working | Team Beef's Quest port on Xash3D; menu cylinder replaced by a quad; bumper, view and d-pad actions added |
+| [Jedi Academy VR and Jedi Outcast VR](games/jedi-knight-vr/) | Native, Vulkan + OpenXR | Working | JKXRL built for ARM64; multi-draw indirect off and per-game tiling mode for Turnip |
 | [DUSK HD VR](games/dusk-hd-vr/) | Proton, OpenVR | Working | Virtual pad stand-in, stripped Harmony patches, uinput pad |
 | [F.E.A.R. VR](games/fear-vr/) | Proton, OpenXR | Working | Proton verb swap for the launcher handoff |
 | [Left 4 Dead 2 VR](games/l4d2-vr/) | Proton, OpenVR | Working | Mod DLL patched for FEX load times |
@@ -131,11 +132,11 @@ Please keep personal data out (no Steam account ids, user names or email address
 
 The documentation, the guide site and the original scripts in this repository are released under the [MIT License](LICENSE).
 
-The ports and mods this repository builds on are separate projects with their own licenses, several of them GPL (GZDoom and SelacoVR, DarkPlaces and the Team Beef Quake ports, Yamagi Quake II, ioquake3, ioRTCW/RealRTCW, RBDoom3BFG, the AvP source, Xash3D FWGS under CSVR). Only patches and build or binding scripts for them are included here, and the patch scripts that carry replacement source fragments are offered under the same license as the code they patch. No game data, mod binaries or built binaries are distributed. Game data must come from your own copies of the games on Steam.
+The ports and mods this repository builds on are separate projects with their own licenses, several of them GPL (GZDoom and SelacoVR, DarkPlaces and the Team Beef Quake ports, Yamagi Quake II, ioquake3, ioRTCW/RealRTCW, RBDoom3BFG, the AvP source, Xash3D FWGS under CSVR, OpenJK under JKXRL). Only patches and build or binding scripts for them are included here, and the patch scripts that carry replacement source fragments are offered under the same license as the code they patch. No game data, mod binaries or built binaries are distributed. Game data must come from your own copies of the games on Steam.
 
 ## Credits
 
-- [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR, CSVR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games; the Xash3D FWGS, ReGameDLL_CS and YaPB projects under CSVR
+- [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR, CSVR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games; the Xash3D FWGS, ReGameDLL_CS and YaPB projects under CSVR; Patola for JKXRL (the Linux fork of Team Beef's JKXR) and the OpenJK project under it
 - [emawind84/SelacoVR](https://github.com/emawind84/SelacoVR), [hh79/gzdoomvr](https://github.com/hh79/gzdoomvr) and jantyka's gzdoomvr lineage for the Doom-engine VR builds
 - [RippeR37/q3vr](https://github.com/RippeR37/q3vr), [vittorioromeo/quakevr](https://github.com/vittorioromeo/quakevr), [NPi2Loup/DOOM-3-BFG-VR](https://github.com/NPi2Loup/DOOM-3-BFG-VR), [Bassquake/Aliens-Versus-Predator-VR](https://github.com/Bassquake/Aliens-Versus-Predator-VR)
 - sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Bruhlitz (Tribes2VRmod), kwstasg (Unreal Revived) and OldUnreal, fholger (farcry_vrmod), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), Astienth (Circuit_Superstars_VR, UnityVR_Bepinex), the Hollow Knight VR Enhanced authors, Nefarius (ViGEm client)

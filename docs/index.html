@@ -147,6 +147,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#unrealrevived" data-guide="unrealrevived"><span class="dot working"></span>Unreal Revived VR</a>
   <a href="#farcry" data-guide="farcry"><span class="dot working"></span>Far Cry VR</a>
   <a href="#csvr" data-guide="csvr"><span class="dot working"></span>Counter-Strike VR</a>
+  <a href="#jkxr" data-guide="jkxr"><span class="dot working"></span>Jedi Academy &amp; Outcast VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
@@ -1380,6 +1381,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Unreal Revived VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper alt-fire, A use item, B next item, X / left view translator, menu pause, right stick click recenter, left stick click / d-pad left previous item, d-pad up/down weapons. Right Y, d-pad right and grips unbound (12 pad buttons). Aim follows the right controller. Set through a Frame binding plus User.ini binds (see its page). Confirmed 2026-10-23.</td></tr>
 <tr><td>Far Cry VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper use, A grenades, B reload, X binoculars, menu pause, left stick click sprint, right stick left/right turn, up next weapon + zoom in, down zoom out; grips (80%) grab. Vehicles: left trigger leave, A reload, B change seat, X lights, left stick click change view. Confirmed 2026-10-23.</td></tr>
 <tr><td>Counter-Strike VR</td><td>Standard using every Frame input: right trigger fire, right bumper secondary fire, A use, B reload, X buy menu, Y drop, right grip (80%) last weapon, right stick turn/weapons, right stick click flashlight, menu; left trigger crouch, left bumper jump, left grip (80%) walk, left stick click night vision, view scoreboard, d-pad ammo / ammo / spray / team menu (tap). The engine port adds the bumper, view and d-pad actions. Confirmed 2026-10-23.</td></tr>
+<tr><td>Jedi Academy VR / Jedi Outcast VR</td><td>Standard with JKXR's motion features kept: right trigger fire/saber, right bumper alt-fire (saber on/off), left bumper jump, left trigger crouch, A use, B Force wheel, X saber style, Y console/back, right grip (80%) weapon wheel, left grip (80%) use Force with gestures, right stick turn, right stick click next item, left stick click use item, view datapad, d-pad quick save/load and previous/next Force power, menu. Force moved to the left grip (crouch rule). 2026-10-23.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
@@ -2208,6 +2210,43 @@ ssh frame "bash ~/PCVR/CSVR/cs_rebind.sh"           # after engine changes that 
 <h2>Undo</h2>
 <pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 3307658986; rm -rf ~/PCVR/CSVR"
 # then remove steam.app.3307658986_* from ~/.config/openvr/config/openxr (chmod 644 first)</code></pre>
+</article>
+
+<!-- ===================== JEDI KNIGHT (JKXRL) ===================== -->
+<article id="jkxr" class="guide" data-title="Jedi Academy & Jedi Outcast VR" hidden>
+<header class="g-head">
+  <span class="status working">Working</span>
+  <h1>Jedi Academy and Jedi Outcast VR: the Linux JKXR fork, built natively on the Frame</h1>
+  <p class="lede">Team Beef's JKXR puts both Jedi Knight games in VR with motion-tracked sabers, Force gestures and selection wheels. Patola's Linux fork, JKXRL, swaps its renderer for Vulkan and talks to OpenXR directly. Its only release is for x86-64 PCs, but the source built for the Frame's ARM64 CPU on the first try. Most of the work after that was performance: two GPU-driver behaviours were costing 40–80 ms a frame.</p>
+  <dl class="facts">
+    <dt>Source</dt><dd>github.com/Patola/JKXRL (8bb830e, 2026-10-03), Vulkan + OpenXR (XR_KHR_vulkan_enable2), GPL v2; SDL 3.4.18 built into a private folder</dd>
+    <dt>Game data</dt><dd>Jedi Academy (Steam 6020) and Jedi Outcast (Steam 6030), hard-linked from the Steam folders</dd>
+    <dt>Install</dt><dd>~/PCVR/JKXR (src, sdl3, jk_*.sh/py) · ~/PCVR/JKXR/jka and /jko (playable, one folder per game)</dd>
+    <dt>Steam entries</dt><dd>"Jedi Academy VR" 2265637930 and "Jedi Outcast VR" 2719912217, native, red art</dd>
+    <dt>Set up</dt><dd>2026-10-23; Academy smooth, Outcast "not perfect but good enough to play"; controls on the <a href="#controls">standard layout</a></dd>
+  </dl>
+</header>
+
+<h2>Building it</h2>
+<p>The build itself only needed one fix. CMake picked up the system's static OpenXR loader archive, which can't be linked here, so the renderer failed to load with missing <code>xr*</code> symbols. It now links SteamVR's ARM64 loader. Everything else, including both games' engines, renderers and game modules, compiled unchanged.</p>
+
+<h2>Fixes</h2>
+<ol>
+<li><strong>See-through menus.</strong> The menu panel was blended using the menu art's own alpha, and SteamVR honours it, so dark parts of the menus showed the world through them. The panel is opaque now.</li>
+<li><strong>Multi-draw indirect.</strong> The renderer batches level geometry into indirect multi-draws. On the Frame's GPU driver that cost about 80 ms a frame (10–12 fps). Its existing fallback path takes 5 ms at full resolution, and both games now use it by default.</li>
+<li><strong>Tiled rendering in Outcast.</strong> Outcast's busy scenes draw 300 to 1,800 models a frame. In the GPU's normal tiled mode each draw cost 40–50 µs, so the heaviest moments ran at 13–20 fps. Rendering straight to memory (<code>TU_DEBUG=sysmem</code>) brought the same scene from 48 ms to 11 ms. It slows Academy's levels from 5 to 12 ms, so it's a per-game default: on for Outcast, off for Academy.</li>
+<li><strong>Not the problem:</strong> resolution, model detail, GPU skinning and the visual effects all made little or no difference. Every measurement was taken with the headset worn, from the game's own GPU timing.</li>
+</ol>
+
+<h2>Controls</h2>
+<p>JKXR's controls assume Touch controllers, with gestures tied to the off-hand trigger and the grips. The port adds OpenXR actions for the Frame's bumpers, d-pad, view button and right-hand X/Y. A small translation in the game client then rebuilds the Touch-style state, so the Force gestures, saber swings and both wheels keep working. A Frame binding written over SteamVR's read-only Touch default connects it all.</p>
+<p>Right: trigger fire and saber, bumper alt-fire (saber on/off), grip (80%) weapon wheel, A use, B Force wheel, X saber style, Y console (hold) or back, stick snap turn, stick click next item, menu button = menu. Left: trigger crouch, bumper jump, grip (80%) use Force with the hand gestures, stick move, stick click use item, view = datapad, d-pad up/down quick save/load, left/right previous/next Force power. Force moved from the left trigger to the left grip because the standard layout puts crouch on that trigger. Tap the d-pad: each action fires at most once a second, because a held Frame d-pad repeats.</p>
+<pre><code>ssh frame "bash ~/PCVR/JKXR/jk_launch.sh jko 40 keep"            # launch through Steam and summarise the logs
+ssh frame "GAME=jko MAP=kejim_post bash ~/PCVR/JKXR/jk_trial.sh test '' '' 1.0 150"   # timed run, headset on</code></pre>
+
+<h2>Undo</h2>
+<pre><code>ssh frame "python3 ~/PCVR/bin/steam_shortcuts.py remove 2265637930; python3 ~/PCVR/bin/steam_shortcuts.py remove 2719912217; rm -rf ~/PCVR/JKXR"
+# then remove steam.app.2265637930_* and steam.app.2719912217_* from ~/.config/openvr/config/openxr (chmod 644 first)</code></pre>
 </article>
 
 <!-- ===================== TRIBES 2 VR ===================== -->

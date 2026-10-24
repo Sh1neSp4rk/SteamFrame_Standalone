@@ -14,6 +14,7 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [apply_art.py](common/apply_art.py) | Applies `<id>p.png`, `<id>.png`, `<id>_hero.png`, `<id>_logo.png` as a game's library art without restarting Steam. |
 | [art_inventory.py](common/art_inventory.py) | Lists shortcuts and Steam apps with launch options, and which library art is cached for each. |
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
+| [make_portrait.ps1](common/make_portrait.ps1) | Windows PowerShell: composes a 600x900 portrait from Steam's cached hero and header for games whose cache has no portrait capsule. |
 | [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. Per-game cases set the mod's overrides; the `farcry` case also starts hudbridge. |
 | [flatvr_setup.sh](common/flatvr_setup.sh) | Applies that split to DUSK, Left 4 Dead 2, Portal 2 and Bendy. |
 | [vr_audit2.py](common/vr_audit2.py) | Audits every VR shortcut for how it depends on a Steam game install: path reference, symlink, hard link, or the game's Proton prefix (which Steam deletes on uninstall). |
@@ -110,6 +111,16 @@ The OpenXR API layer for Proton games (per-eye quad layers, single interaction p
 | [cs_setup.sh](counter-strike-vr/cs_setup.sh) | Hard-links Steam's Counter-Strike into the game folder, copies CSVR's VR assets over the links, adds the shortcut. |
 | [cs_controls.py](counter-strike-vr/cs_controls.py), [cs_name.py](counter-strike-vr/cs_name.py) | The Frame binding over the read-only Touch default plus `frame_controls.cfg`; the player name file. |
 | [cs_rebind.sh](counter-strike-vr/cs_rebind.sh), [cs_launch.sh](counter-strike-vr/cs_launch.sh), [cs_state.sh](counter-strike-vr/cs_state.sh) | Regenerate and lock the binding after engine changes; launch with a log summary; status. |
+
+### jedi-knight-vr ([games/jedi-knight-vr](../games/jedi-knight-vr/))
+
+| Script | What it does |
+|---|---|
+| [jk_port.py](jedi-knight-vr/jk_port.py) | **GPL.** Idempotent patches for JKXRL: SteamVR's loader, opaque menu quad, multi-draw indirect off, resolution scale, the Frame actions and the client's layout translation. |
+| [jk_clone.sh](jedi-knight-vr/jk_clone.sh), [jk_sdl3.sh](jedi-knight-vr/jk_sdl3.sh), [jk_build.sh](jedi-knight-vr/jk_build.sh) | Shallow clones, SDL 3 into a private prefix, the CMake/Ninja build of both games. |
+| [jk_setup.sh](jedi-knight-vr/jk_setup.sh) | The two game folders with hard-linked Steam pk3s, `run.sh` with the per-game tiling default, both shortcuts. |
+| [jk_controls.py](jedi-knight-vr/jk_controls.py), [jk_rebind.sh](jedi-knight-vr/jk_rebind.sh) | The Frame bindings over both apps' read-only Touch defaults; regenerate and lock after engine changes. |
+| [jk_launch.sh](jedi-knight-vr/jk_launch.sh), [jk_trial.sh](jedi-knight-vr/jk_trial.sh), [jk_sweep.sh](jedi-knight-vr/jk_sweep.sh), [jk_bisect.sh](jedi-knight-vr/jk_bisect.sh), [jk_heavy.sh](jedi-knight-vr/jk_heavy.sh), [jk_heavy2.sh](jedi-knight-vr/jk_heavy2.sh), [jk_heavy3.sh](jedi-knight-vr/jk_heavy3.sh) | Launch with a log summary; timed runs, resolution sweep, feature bisect and heavy-scene comparisons from the renderer's GPU timing (headset worn). |
 
 ### avp-vr ([games/avp-vr](../games/avp-vr/))
 
