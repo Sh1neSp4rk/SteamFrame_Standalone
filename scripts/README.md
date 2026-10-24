@@ -208,8 +208,10 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [portal2-vr/p2_binding.sh](portal2-vr/p2_binding.sh) | Reuses the L4D2 Frame binding (same action set). |
 | [bendy-vr/install.sh](bendy-vr/install.sh) | Installs BendyVR by hand once the `release-1.5` branch is in place. |
 | [bendy-vr/launch.sh](bendy-vr/launch.sh) | Launches and reports the BepInEx and Unity logs. |
-| [deus-ex-hr-vr/install.sh](deus-ex-hr-vr/install.sh) | Installs DeusExHRVR with the x86-64 runtime DLLs and registry settings, with backups. |
+| [deus-ex-hr-vr/install.sh](deus-ex-hr-vr/install.sh) | Installs DeusExHRVR with the x86-64 runtime DLLs and registry settings, with backups (mod since removed; kept for a retry). |
 | [deus-ex-hr-vr/launch.sh](deus-ex-hr-vr/launch.sh) | Launches with optional Proton/DXVK logging. |
+| [deus-ex-hr-vr/dx_mode.py](deus-ex-hr-vr/dx_mode.py), [dx_flatvr.py](deus-ex-hr-vr/dx_flatvr.py) | The four graphics registry values per mode (the game rewrites them), and the flat/VR split. |
+| [deus-ex-hr-vr/dx_controls.py](deus-ex-hr-vr/dx_controls.py), [dx_scale.sh](deus-ex-hr-vr/dx_scale.sh) | Frame binding with the simple profile locked plus ini button maps; `WorldUnitsPerMetre`. |
 
 ### contractors, halo-mcc, snapshot-vr
 

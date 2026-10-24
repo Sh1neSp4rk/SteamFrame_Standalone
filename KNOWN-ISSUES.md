@@ -46,6 +46,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed (Red Faction VR):** SteamVR builds a Proton OpenXR app's input context from auto-generated defaults in `~/.config/openvr/config/openxr/steam.app.<id>_<type>_N_binding.json`, rewritten every launch, and only honours a user-selected custom binding when that context holds a single interaction profile. An app that suggests both Touch and Index bindings keeps its defaults. Making the Index default unwritable (a read-only `{}`) produces `SetXrInputConfig failed. Unable to write` and `Loading 1 bindings`, after which the custom file applies.
 - A custom file typed `controller_type: oculus_touch` is treated as Touch paths and pushed through the Frame remap, which drives each hand's trigger and bumper from the one Touch trigger; type it `frame_controller` instead.
 - A file carrying a haptic entry for an action the app does not define (`Unknown action ... when loading binding file`) is dropped whole; keep `"haptics": []`.
+- **Hand-agnostic actions:** a mod whose OpenXR actions are not tied to a hand (DeusExHRVR) can be rebound to the Frame directly; its second suggested profile (the simple controller) has to be locked to an empty `{}` first.
 - **Without a VR restart:** an API layer that forwards only the game's Touch suggestion from `xrSuggestInteractionProfileBindings` ([tools/frame-quadfix](tools/frame-quadfix/), `FRAMEXR_PROFILES`) keeps the context at one profile, and a `frame_controller`-typed binding written over the auto-generated `steam.app.<id>_oculus_touch_0_binding.json` and made read-only is loaded at the next launch (Unreal Revived VR). No `steamvr.vrsettings` edit and no session restart.
 - **Who:** Valve (SteamVR OpenXR input for Proton apps).
 
@@ -228,6 +229,11 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed:** an installer with `ArchitecturesAllowed=x64compatible` asks Windows which machine types it can run; Proton's ARM64 Wine answers "x86 and Arm64" even with the prefix set to Windows 11, so setup quits with "does not support the version of Windows" (Unreal Revived 0.9.0). Installers whose work is done in PowerShell scripts cannot run in the prefix either.
 - **Workaround:** run the installer on a Windows PC with the same target paths the prefix uses, copy the result into the prefix, then remove it on the PC.
 - **Who:** Wine (reporting x64 emulation capability on ARM64).
+
+### Games that rewrite their own graphics settings turn a mod's stereo off
+
+- **Observed:** Deus Ex: Human Revolution DC writes its graphics registry (`[Software\Eidos\Deus Ex: HRDC\Graphics]`) back to its own values whenever options are saved: `StereoMode 0`, `VSync 1`, `AA 5`. The DeusExHRVR mod then never produces its shared eye pair and its helper process quits after about 20 seconds, so VR stops working silently days after a successful install.
+- **Workaround:** set the mod's values in a launch wrapper on every start ([dx_mode.py](scripts/deus-ex-hr-vr/dx_mode.py)); that wrapper is also where a flat/VR split belongs.
 
 ### Engines that leave a crash flag open a dialog nobody can see
 

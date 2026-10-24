@@ -45,7 +45,7 @@ Failure patterns seen more than once:
 
 - A launcher runs before the game and stops on a dialog nobody can see in VR (Contractors, Halo MCC, FighterZ). Fix: a wrapper script that swaps the executable Steam starts.
 - Steam's install script overwrites Proton's ARM64 runtime DLLs with Microsoft x86-64 ones and the prefix cannot boot (Halo MCC). Fix: restore Proton's copies.
-- A mod's x86-64 DLL cannot load an ARM64 runtime DLL from the prefix (Borderlands VR, Deus Ex HR VR). Fix: an x86-64 copy beside the executable.
+- A mod's x86-64 DLL cannot load an ARM64 runtime DLL from the prefix (Borderlands VR, Deus Ex HR VR, Unreal Revived VR). Fix: an x86-64 copy beside the executable.
 - A VR mod that patches Direct3D in memory crashes on ARM64 DXVK (Halo MCC VR). Fix: Proton's x86-64 DXVK beside the exe.
 - Strict OpenXR: SteamVR on the Frame refuses an instance that enables `XR_FB_foveation` without `XR_FB_swapchain_update_state` (Unity OpenXR 1.14 games). Fix: a 70 KB implicit API layer.
 - A game below about 20 fps shows a black world with its menus intact: SteamVR blanks it. Lower the resolution.
@@ -70,7 +70,6 @@ Failure patterns seen more than once:
 | [Left 4 Dead 2 VR](games/l4d2-vr/) | Proton, OpenVR | Working | Mod DLL patched for FEX load times |
 | [Portal 2 VR](games/portal2-vr/) | Proton, OpenVR | Working, controls unconfirmed | Shares the L4D2 binding |
 | [Bendy VR](games/bendy-vr/) | Proton, OpenVR | Working | Needs the `release-1.5` Steam branch |
-| [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Working | x86-64 vcruntime beside the host |
 | [Red Faction VR](games/red-faction-vr/) | Proton, OpenXR (32-bit) | Working | Mod patched and rebuilt for the standard layout; single-profile binding rule |
 | [Hollow Knight VR](games/hollow-knight-vr/) | Proton, OpenVR | Working | DUSK recipe plus a plugin for pause and the d-pad |
 | [Circuit Superstars VR](games/circuit-superstars-vr/) | Proton, OpenVR | Working | Gamepad-only mod; a plugin drives a virtual pad from the SteamVR actions |
@@ -89,6 +88,7 @@ Failure patterns seen more than once:
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
 | [Titanfall 2 VR](games/titanfall2-vr/) | Streamed only | Not standalone | Needs the mod's installer window on a PC |
 | [Tribes 2 VR](games/tribes2-vr/) | Proton (32-bit) | Dead end | Mod runs; TribesNext login crashes under FEX, 2D shell cannot fuse on the Frame's lenses |
+| [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Removed | Worked at 18 to 36 fps reprojected with eleven inputs; not worth keeping. Lessons recorded |
 
 ## Controller layout
 

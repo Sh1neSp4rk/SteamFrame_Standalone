@@ -131,7 +131,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#l4d2" data-guide="l4d2"><span class="dot working"></span>Left 4 Dead 2 VR</a>
   <a href="#portal2" data-guide="portal2"><span class="dot working"></span>Portal 2 VR</a>
   <a href="#bendy" data-guide="bendy"><span class="dot working"></span>Bendy VR</a>
-  <a href="#deusex" data-guide="deusex"><span class="dot working"></span>Deus Ex: HR VR</a>
+  <a href="#deusex" data-guide="deusex"><span class="dot dead"></span>Deus Ex: HR VR (removed)</a>
   <h2>Working: sideloaded ports</h2>
   <a href="#doom" data-guide="doom"><span class="dot working"></span>GZDoom VR: Doom, Heretic, Hexen</a>
   <a href="#quaketb" data-guide="quaketb"><span class="dot working"></span>Quake (Team Beef port)</a>
@@ -1388,7 +1388,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Portal 2 VR</td><td>Same binding as L4D2 VR (shared action set); triggers = blue and orange portals. Controls not yet confirmed in play.</td></tr>
 <tr><td>GZDoom VR (Doom, Heretic, Hexen)</td><td>Steam's stock Frame layout; Heretic and Hexen grips raised to 80%.</td></tr>
 <tr><td>F.E.A.R. VR</td><td>SteamVR's auto layout; not yet reviewed.</td></tr>
-<tr><td>AvP VR, Bendy VR, Deus Ex HR VR</td><td>Mod defaults; not yet reviewed against the standard.</td></tr>
+<tr><td>AvP VR, Bendy VR</td><td>Mod defaults; not yet reviewed against the standard.</td></tr>
 </table></div>
 
 <h2>Checking a binding took</h2>
@@ -1841,7 +1841,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
 <!-- ===================== DEUS EX HR VR ===================== -->
 <article id="deusex" class="guide" data-title="Deus Ex: HR VR" hidden>
 <header class="g-head">
-  <span class="status working">Working</span>
+  <span class="status dead">Removed</span>
   <h1>Deus Ex: Human Revolution Director's Cut VR</h1>
   <p class="lede">A 32-bit game rendering both eyes into one shared Direct3D 11 texture that a 64-bit OpenXR helper submits to SteamVR. Cross-process texture sharing works under Proton 11 on the Frame; one runtime DLL needed swapping.</p>
   <dl class="facts">
@@ -1857,8 +1857,14 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
 <li>Frame fix: an x86-64 <code>vcruntime140_1.dll</code> beside the host; the prefix's copy is ARM64 and the x86-64 host cannot load it.</li>
 <li>Settings <code>&lt;game&gt;/DeusExHRVR.ini</code>, logs <code>&lt;game&gt;/DeusExHRVR*.log</code>. Keys: F9 recenter, F6 tracking mode.</li>
 </ul>
-<h2>Undo</h2>
-<pre><code>ssh frame "bash ~/PCVR/DeusExHRVR/uninstall.sh"</code></pre>
+<h2>Removed on 2026-10-24</h2>
+<p>The mod worked, but not well enough to keep: it ran at 18–36 fps with reprojection, and its controls only read eleven Quest inputs. The game now plays flat from its normal Steam entry. Before it went, three things were learned:</p>
+<ul>
+<li><strong>It can silently stop working.</strong> The game rewrites its graphics settings whenever options are saved. With stereo off, it never produces the shared image, and the VR helper quits after about 20 seconds. A launcher that sets the four values on every start fixes this, and also allows a clean flat/VR split.</li>
+<li><strong>Scale controls the depth you notice.</strong> At the default 100 units per metre the world felt flat and the wrong size. The author's tested 300 fixed it; F8 eye captures confirmed real stereo either way.</li>
+<li><strong>Frame buttons can be remapped.</strong> The mod's OpenXR actions aren't tied to a hand, so a Frame binding plus the mod's <code>[Buttons]</code> settings can match the game's Xbox prompts. The game suggests two controller profiles, so the simple one has to be locked empty first.</li>
+</ul>
+<p>Removed: the mod's DLLs, folder, settings, logs and captures; the four graphics values went back to their originals, not the whole October registry backup; also the launch options, the VR shortcut and its art, and the SteamVR binding files. The scripts and the mod's README are kept in <code>~/PCVR/_deadends/DeusExHRVR</code>.</p>
 </article>
 
 <!-- ===================== LIBRARY ENTRIES AND ART ===================== -->
