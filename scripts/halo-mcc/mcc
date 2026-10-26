@@ -4,12 +4,19 @@
 # "Anti-Cheat Disabled" entry        -> start the VR mod launcher instead: VR.
 # EAC is never started on the Frame: its bootstrapper can reinstall the VC++ runtime that
 # broke the Proton prefix, and EAC does not work under FEX anyway.
+# frame_quadfix layer (VR): Touch-profile filter + View/D-pad bridge; quads keep their eye visibility but get
+# normalised orientations (the F1 panel in stereo gameplay was rejected as XR_ERROR_POSE_INVALID otherwise).
+export FRAMEXR_QUAD=norm
+# Proton/FEX logging traces every exception and slows the game; MCC_LOG=1 turns it back on.
+[ "$MCC_LOG" = 1 ] || unset PROTON_LOG
 a=("$@")
+vr=0
 for i in "${!a[@]}"; do
   case "${a[$i],,}" in
     *mcc-win64-shipping.exe)
       root="${a[$i]%/*/*/*/*}"
       a[$i]="$root/Halo_MCC_VR/HaloMCCVRLauncher.exe"
+      vr=1
       ;;
     */mcclauncher.exe)
       a[$i]="${a[$i]%/*}/MCC/Binaries/Win64/MCC-Win64-Shipping.exe"
@@ -20,4 +27,15 @@ for i in "${!a[@]}"; do
       ;;
   esac
 done
+# VR is CPU-bound under FEX. "echo off > ~/PCVR/HaloMCCVR/tso" drops x86 memory-order emulation (TSO) for a
+# frame or two more; it made Halo CE crash on load, so Proton's default (TSO on) stays unless the file says off.
+if [ $vr = 1 ] && [ "$(cat ~/PCVR/HaloMCCVR/tso 2>/dev/null)" = off ]; then
+  export STEAM_COMPAT_FEX_CONFIG="TSOEnabled:0,Multiblock:1"
+fi
+# Halo 3 felt world size (source-built mod): Halo units per metre, default 0.33; higher = smaller world.
+ws=$(cat ~/PCVR/HaloMCCVR/world_scale 2>/dev/null)
+[ $vr = 1 ] && [ -n "$ws" ] && export FRAME_WORLD_SCALE="$ws"
+# Depth strength: eye-separation multiplier on top of the world scale (default 1).
+ss=$(cat ~/PCVR/HaloMCCVR/stereo_scale 2>/dev/null)
+[ $vr = 1 ] && [ -n "$ss" ] && export FRAME_STEREO_SCALE="$ss"
 exec "${a[@]}"

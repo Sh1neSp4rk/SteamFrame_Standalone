@@ -86,6 +86,22 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed:** a mod that presents a 2D screen by submitting the same image to both eyes at full texture bounds (Tribes 2 VR's shell: "no eye crop available - submitting full bounds, image will double") shows doubled menus. The Frame's per-eye projections are wide and mirror-asymmetric: raw tangents left -1.65, right 1.22, top -1.73, bottom 1.17. The same pixel sits at a different angle in each eye, so a shared image can never line up.
 - **Workaround for mod authors:** crop each eye from the submitted image using the `GetProjectionRaw` tangents, or render the screen quad per eye with the headset projection, or put 2D screens on an overlay. Headsets with symmetric lenses hide this bug.
 
+### One field-of-view value for two asymmetric eyes: cross-eyed and magnified
+
+- **Observed (Halo MCC VR, Halo 3):** the mod rendered each eye with a symmetric cover sized to that eye's lens (Frame: left 58.8° out / 60.0° down, right 59.4° / 59.5°) but published a single cover value for both eyes: the last eye rendered. The left eye then failed the mod's containment check, every frame fell back to submitting the whole slice at the cover FOV, and the left image was labelled with the right eye's angles. In the headset: cross-eyed, zoomed in, weak depth. ODST, which stores one value per eye, looked right.
+- **Workaround for mod authors:** keep one projection per eye all the way to `XrCompositionLayerProjectionView.fov`, or render both eyes with one shared cover wide enough for both lenses (the Halo patch uses the widest native edge of either eye ×1.01) and crop each eye with `imageRect`. Headsets with mirror-symmetric lenses hide the bug ([games/halo-mcc](games/halo-mcc/)).
+
+### A head-locked quad plus another quad is rejected
+
+- **Observed (Halo MCC VR):** frames carrying the projection layer, a world-space crosshair quad and a quad in a `VIEW` reference space (the mod's menu, 1.2 m ahead) were rejected: `XR_ERROR_POSE_INVALID`. Moving the head-locked quad into the projection space alone did not help; leaving the crosshair quad out while the menu is up did. Projection plus one quad of either kind is accepted.
+- **Workaround:** the Halo build of the layer ([tools/frame-quadfix/halo](tools/frame-quadfix/halo/), `FRAMEXR_QUAD=norm`) re-expresses `VIEW`-space quads in the projection space and drops the other quads while one is present.
+- **Who:** Valve (SteamVR's OpenXR compositor on the Frame).
+
+### A locked custom binding for an older action list loads nothing
+
+- **Observed:** SteamVR matches an app's generated `steam.app.<id>_oculus_touch_N_binding.json` to the app's exact list of actions. After a mod update or an API layer adds actions, SteamVR tries to write a new default, fails on the read-only file, logs `SetXrInputConfig: Loading 0 bindings` and no controller input reaches the app at all.
+- **Workaround:** move the old files aside, launch once so SteamVR writes a fresh `_0` default (that launch uses its automatic layout), overwrite that file with the Frame binding and lock it ([watchbind.sh](scripts/halo-mcc/watchbind.sh), [apply-frame-binding.ps1](scripts/halo-mcc/windows/apply-frame-binding.ps1)). Stick clicks belong inside the joystick source (`inputs: { position, click }`).
+
 ### SteamVR blanks the world below about 20 fps
 
 - **Observed:** a scene application rendering slower than roughly 20 fps shows a black world while its own menu panels and overlays stay visible and audio keeps playing. It looks like a rendering bug and is a frame-rate problem. Quake VR: Unleashed at 1728x1728 per eye (39 ms a frame) is the reference case.

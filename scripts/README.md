@@ -219,5 +219,12 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 |---|---|
 | [contractors/contractors](contractors/contractors) | Launch-option wrapper that skips Unreal's prerequisite bootstrapper. |
 | [halo-mcc/repair-mcc-prefix.sh](halo-mcc/repair-mcc-prefix.sh) | Restores Proton's ARM64 runtime DLLs after the EAC installer overwrote them. |
-| [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry. |
+| [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry; sets the layer mode, keeps Proton's log off, passes the tuning files. |
+| [halo-mcc/patches/](halo-mcc/patches/) | MCCVR source patch: Halo 3 shared eye cover (cross-eyed/zoomed fix), weapon-flicker fix, `FRAME_WORLD_SCALE`/`FRAME_STEREO_SCALE`, eye dump and flicker diagnostics. |
+| [halo-mcc/install_build.sh](halo-mcc/install_build.sh) | Installs a Windows-built `HaloMCCVR.dll` and the frame_quadfix layer on the Frame (keeps the 0.5.1 launcher). |
+| [halo-mcc/mcc_controls.sh](halo-mcc/mcc_controls.sh) | Builds and registers the layer in MCC's prefix, writes the Frame binding over SteamVR's generated defaults, sets the essential config. |
+| [halo-mcc/mcc_binding.py](halo-mcc/mcc_binding.py), [mcc_frame_binding.json](halo-mcc/mcc_frame_binding.json) | Frame controller layout, 1:1 with the flat Xbox layout (View and D-pad through the layer's pad bridge). |
+| [halo-mcc/watchbind.sh](halo-mcc/watchbind.sh) | Waits for SteamVR to write Halo's new binding file, then replaces it with the Frame layout and locks it. |
+| [halo-mcc/windows/install-pc.ps1](halo-mcc/windows/install-pc.ps1) | Windows (streaming PC or laptop): installs the built mod, launcher and layer into MCC, writes the layer's `.reg` files for that machine. |
+| [halo-mcc/windows/apply-frame-binding.ps1](halo-mcc/windows/apply-frame-binding.ps1) | Windows: puts the Frame layout into SteamVR's generated Halo binding file and locks it (`-Watch` waits for the first launch). |
 | [snapshot-vr/install-snapshotvr-fovfix.sh](snapshot-vr/install-snapshotvr-fovfix.sh) | Builds and installs an implicit OpenXR API layer that adds `XR_FB_swapchain_update_state` when a game enables `XR_FB_foveation` without it. |

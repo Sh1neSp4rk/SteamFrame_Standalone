@@ -109,7 +109,7 @@ summary { cursor: pointer; font-weight: 500; }
 <header class="top">
   <h1 class="brand">Frame Standalone Guides</h1>
   <p class="tagline">Why PC games stall when you run them directly on the Steam Frame, the fixes that worked on one headset, and the ports built on it. Pick a game on the left. Every script and patch named here is in the <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">SteamFrame_Standalone</a> repository.</p>
-  <div class="meta"><span>Updated 2026-10-23</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
+  <div class="meta"><span>Updated 2026-10-26</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
 </header>
 
 <div class="layout">
@@ -400,13 +400,13 @@ ssh frame "grep -c 'Created remote Vulkan image' ~/.local/share/Steam/logs/vrcli
 <header class="g-head">
   <span class="status working">Working</span>
   <h1>Halo: The Master Chief Collection, flat and with the VR mod</h1>
-  <p class="lede">Two separate problems: Steam's install script wrecked the Proton prefix, and the VR mod's hooks cannot patch ARM64 code. Both were fixed without touching SteamOS, and the two Steam launch entries now mean flat and VR.</p>
+  <p class="lede">Two separate problems: Steam's install script wrecked the Proton prefix, and the VR mod's hooks cannot patch ARM64 code. Both were fixed without touching SteamOS, and the two Steam launch entries now mean flat and VR. A rebuilt mod then fixed Halo 3's stereo, the weapon flicker and the in-game menu (see <em>Making the VR mod play well</em>); the same build streams from a Windows PC with the Frame's controls.</p>
   <dl class="facts">
     <dt>Steam app</dt><dd>976730 · 97 GB</dd>
     <dt>Compat tool</dt><dd>Proton Experimental (ARM64), Steam's default for this app</dd>
-    <dt>VR mod</dt><dd>MCCVR 0.5.1 (github.com/moistman42069/MCCVR-Halo-Build)</dd>
+    <dt>VR mod</dt><dd>MCCVR built from source with the Frame fixes (github.com/moistman42069/MCCVR-Halo-Build)</dd>
     <dt>Fix</dt><dd>prefix repair + wrapper + x86-64 DXVK beside the exe</dd>
-    <dt>Fixed</dt><dd>2026-10-09</dd>
+    <dt>Fixed</dt><dd>2026-10-09 · VR made good 2026-10-26</dd>
   </dl>
 </header>
 
@@ -495,16 +495,23 @@ done</code></pre>
 <p>Save as <code>/home/steamos/mcc</code> (the mod folder also keeps a copy as <code>mcc-launch.sh</code>):</p>
 <pre><code>#!/bin/bash
 # Steam hands this script its full launch command as arguments.
-# Normal entry (mcclauncher.exe, EAC) -> run the game directly with -no-eac: FLAT, no anti-cheat.
-# "Anti-Cheat Disabled" entry        -> start the VR mod launcher instead: VR.
+# Normal entry (mcclauncher.exe, EAC) -&gt; run the game directly with -no-eac: FLAT, no anti-cheat.
+# "Anti-Cheat Disabled" entry        -&gt; start the VR mod launcher instead: VR.
 # EAC is never started on the Frame: its bootstrapper can reinstall the VC++ runtime that
 # broke the Proton prefix, and EAC does not work under FEX anyway.
+# frame_quadfix layer (VR): Touch-profile filter + View/D-pad bridge; quads keep their eye visibility but get
+# normalised orientations (the F1 panel in stereo gameplay was rejected as XR_ERROR_POSE_INVALID otherwise).
+export FRAMEXR_QUAD=norm
+# Proton/FEX logging traces every exception and slows the game; MCC_LOG=1 turns it back on.
+[ "$MCC_LOG" = 1 ] || unset PROTON_LOG
 a=("$@")
+vr=0
 for i in "${!a[@]}"; do
   case "${a[$i],,}" in
     *mcc-win64-shipping.exe)
       root="${a[$i]%/*/*/*/*}"
       a[$i]="$root/Halo_MCC_VR/HaloMCCVRLauncher.exe"
+      vr=1
       ;;
     */mcclauncher.exe)
       a[$i]="${a[$i]%/*}/MCC/Binaries/Win64/MCC-Win64-Shipping.exe"
@@ -515,9 +522,20 @@ for i in "${!a[@]}"; do
       ;;
   esac
 done
+# VR is CPU-bound under FEX. "echo off &gt; ~/PCVR/HaloMCCVR/tso" drops x86 memory-order emulation (TSO) for a
+# frame or two more; it made Halo CE crash on load, so Proton's default (TSO on) stays unless the file says off.
+if [ $vr = 1 ] &amp;&amp; [ "$(cat ~/PCVR/HaloMCCVR/tso 2&gt;/dev/null)" = off ]; then
+  export STEAM_COMPAT_FEX_CONFIG="TSOEnabled:0,Multiblock:1"
+fi
+# Halo 3 felt world size (source-built mod): Halo units per metre, default 0.33; higher = smaller world.
+ws=$(cat ~/PCVR/HaloMCCVR/world_scale 2&gt;/dev/null)
+[ $vr = 1 ] &amp;&amp; [ -n "$ws" ] &amp;&amp; export FRAME_WORLD_SCALE="$ws"
+# Depth strength: eye-separation multiplier on top of the world scale (default 1).
+ss=$(cat ~/PCVR/HaloMCCVR/stereo_scale 2&gt;/dev/null)
+[ $vr = 1 ] &amp;&amp; [ -n "$ss" ] &amp;&amp; export FRAME_STEREO_SCALE="$ss"
 exec "${a[@]}"</code></pre>
-<p>Launch Options on the headset (the <code>PROTON_LOG=1</code> part is optional and only keeps a Wine log in the home folder):</p>
-<pre><code>PROTON_LOG=1 bash ~/mcc %command%</code></pre>
+<p>Launch Options on the headset (the wrapper clears <code>PROTON_LOG</code> unless <code>MCC_LOG=1</code> is set, see the warning further down):</p>
+<pre><code>bash ~/mcc %command%</code></pre>
 <p>With the wrapper in place the two entries in Steam's launch menu mean:</p>
 <div class="tablewrap"><table>
 <tr><th>Steam entry</th><th>What Steam would run</th><th>What actually runs</th></tr>
@@ -527,6 +545,56 @@ exec "${a[@]}"</code></pre>
 
 <h2>Check it worked</h2>
 <p>The mod writes <code>Halo_MCC_VR/HaloMCCVR.log</code>. A good VR session logs <code>status: session=focused shouldRender=1 layers=1</code> and an fps figure (51 at the menu on the verified run), with no <code>FAULT</code> or <code>C000001D</code> lines over several minutes. The flat entry simply runs; <code>~/steam-976730.log</code> stays free of unhandled exceptions.</p>
+
+<h2>Making the VR mod play well (2026-10-26)</h2>
+<p>With the steps above Halo 3 ran in VR but felt wrong: the gun flickered between the VR pose and the flat one in the right eye, the world looked zoomed in and cross-eyed, ODST froze on load, and the mod's own menu would not show during gameplay. Every one of these traced to a specific cause, and the fixes needed a rebuilt mod. Halo 3 now plays with proper stereo; CE and ODST play too.</p>
+
+<h3>Build the mod from source</h3>
+<p>The public source is newer than the 0.5.1 release and is MIT licensed. It needs Windows to build (Visual C++ and the DirectX shader compiler), so the build runs on the PC and only the DLL is copied to the headset.</p>
+<ol>
+<li>PC: install Visual Studio 2022 Build Tools with the C++ workload (about 7 GB):
+<pre><code>winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"</code></pre></li>
+<li>Clone <code>github.com/moistman42069/MCCVR-Halo-Build</code>, apply the Frame patch (<code>git am 0001-Steam-Frame-fix-Halo-3-stereo-...patch</code>), and fetch OpenXR-SDK, MinHook and Dear ImGui into <code>out\deps\</code> at the commits pinned in <code>CMakeLists.txt</code>.</li>
+<li>Build with the CMake that ships inside Build Tools, tests off (no Python needed):
+<pre><code>cmake --preset release -DBUILD_TESTING=OFF
+cmake --build --preset release --target halo3xr -- /m</code></pre></li>
+<li>Copy <code>out\build\release\Release\HaloMCCVR.dll</code> (and the <code>assets\fonts</code> folder from <code>cmake --install ... --component dist</code>) over the mod's copy on the headset, with MCC closed. Keep the 0.5.1 <code>HaloMCCVRLauncher.exe</code>: the newer launcher is a menu that waits for a click.</li>
+</ol>
+
+<h3>What was wrong, and the fix for each</h3>
+<div class="tablewrap"><table>
+<tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+<tr><td>Halo 3 cross-eyed, zoomed in, little depth</td><td>Each eye was rendered with its own symmetric view (left lens 58.8°/60.0°, right 59.4°/59.5°), but one shared value was sent to SteamVR. The left eye failed the mod's coverage check, so every frame went out as a whole slice at the right eye's angles, and the left picture was stretched against how it was drawn.</td><td>Render both eyes with one shared view, 1% wider than the widest lens edge of either eye. The log then says <code>submitting native per-eye FOV</code>, the path ODST always used.</td></tr>
+<tr><td>Gun flickers between VR and flat pose (right eye)</td><td>The mod used each frame's first-person pose once, wiped it when an interpolation returned nothing, and Halo 3 draws arms and gun as separate models, sometimes from an older pose buffer.</td><td>Keep the pose until a new one replaces it, and give a draw with no pose the last pose of the same model. <code>FRAME_FP_REUSE=0</code> turns this off.</td></tr>
+<tr><td>Mod menu (L3+R3) invisible during gameplay</td><td>SteamVR on the Frame rejected every frame that carried the crosshair panel plus the head-locked menu panel (<code>XR_ERROR_POSE_INVALID</code>), so the headset held the last good frame.</td><td>The frame_quadfix OpenXR layer (mode <code>FRAMEXR_QUAD=norm</code>) moves head-locked panels into room space and drops the crosshair while the menu is up.</td></tr>
+<tr><td>ODST froze on load, then 0.7.0 froze Halo 3</td><td>The optional manual-reload/holster hooks, and later the 0.7.0 "native VR action bridge", patch Halo's own input and reload code; under FEX the render thread spins forever.</td><td><code>manual_reload = 0</code>, <code>weapon_holsters = 0</code>, <code>vr_action_mapping = 0</code> in <code>halomccvr.cfg</code>.</td></tr>
+<tr><td>Halo CE crashes on load</td><td>FEX without x86 memory-order emulation (TSO off), tried for speed.</td><td>Leave TSO on (Proton's default).</td></tr>
+<tr><td>Halo CE crashes on View</td><td>In CE, Back is MCC's instant classic/remastered graphics switch, which breaks the VR camera.</td><td>The layer's pad bridge holds Back while CE is the active game.</td></tr>
+</table></div>
+
+<h3>Controls: 1:1 with flat</h3>
+<p>The Frame has A/B/X/Y on the right controller and a D-pad and View button on the left, so every Xbox button has a Frame twin. The SteamVR binding maps each one to the mod action that sends the same Xbox button; the right stick turns instead of looking, and grips also act as LB/RB for two-handed aiming. The mod has no Back or D-pad action, so the same OpenXR layer reads View and the D-pad itself and adds real XInput Back and D-pad bits to what the game reads. Each Halo game then follows its own flat MCC button layout.</p>
+<div class="note">SteamVR keys the generated binding file to the mod's list of actions. When a mod update or the layer changes that list, a read-only binding for the old list makes SteamVR load <em>nothing</em> and every button goes dead. Move the old <code>steam.app.976730_oculus_touch_*</code> files aside, launch once (SteamVR writes a fresh <code>_0</code> file), overwrite it with the Frame layout, lock it, and relaunch.</div>
+
+<h3>Tuning without a keyboard</h3>
+<p>The wrapper reads three small files in <code>~/PCVR/HaloMCCVR/</code> on every launch: <code>world_scale</code> (Halo 3 units per metre, default 0.33; higher makes the world smaller), <code>stereo_scale</code> (eye separation only, default 1.0) and <code>tso</code> (<code>on</code>). After the eye fix the defaults feel right. In MCC's video settings use the Performance preset; Halo 3 runs at roughly 20 to 35 fps.</p>
+
+<h3>Seeing what each eye gets</h3>
+<pre><code>ssh frame 'touch ~/.local/share/Steam/steamapps/common/"Halo The Master Chief Collection"/Halo_MCC_VR/dump_eyes.flag'
+# a few seconds later: Halo_MCC_VR/HaloMCCVR-eye0.bmp and -eye1.bmp (half size)</code></pre>
+<p>The rebuilt mod also logs <code>FRAME-FLICKER</code> counters every two seconds, and the layer writes <code>MCC/Binaries/Win64/frame_quadfix.log</code> with accepted and rejected frame counts.</p>
+<div class="note warn">Do not leave <code>PROTON_LOG=1</code> on. One session grew <code>~/steam-976730.log</code> to 11.7 GB, filled the headset's drive and cut the mod's config file off mid-line. The wrapper now unsets it unless <code>MCC_LOG=1</code>.</div>
+
+<h3>Streaming from a Windows PC instead (or setting up another PC)</h3>
+<p>The same patched build runs on a Windows PC that streams to the Frame through SteamVR. None of the Proton problems exist there (no prefix repair, no DXVK copies, no wrapper) and the GPU is far faster, but two fixes still matter: the Halo 3 eye fix, which is about the Frame's lens angles, and the Frame button layout. SteamVR on Windows has the same <code>frame_controller</code> driver, so the binding file is identical.</p>
+<ol>
+<li>Build as above, or copy the build's <code>stage\</code> folder from a PC that already built it (a laptop then needs no Visual Studio). Build the layer on the Frame or any Linux box (<code>tools/frame-quadfix/halo/build.sh</code>); the same DLL works on Windows and does nothing in any process except <code>MCC-Win64-Shipping.exe</code>.</li>
+<li>With MCC closed, run the installer from the repo; it finds MCC through Steam's library folders:
+<pre><code>powershell -ExecutionPolicy Bypass -File scripts\halo-mcc\windows\install-pc.ps1 -ModFiles &lt;stage&gt;\ModFiles -Launcher &lt;stage&gt;\HaloMCCVRLauncher.exe -Layer &lt;folder with frame_quadfix.dll and .json&gt;</code></pre></li>
+<li>Double-click the <code>register-frame-layer.reg</code> it wrote into <code>Halo_MCC_VR</code> (admin prompt). It has to be machine-wide: the mod's launcher runs as administrator and starts MCC elevated, and the OpenXR loader ignores per-user layers in elevated processes.</li>
+<li>Run <code>apply-frame-binding.ps1 -Watch</code> from the same folder, connect the Frame to SteamVR on the PC, and start the mod once through <code>HaloMCCVRLauncher.exe</code> (pick MCC, Launch). The script locks the Frame layout into SteamVR's generated Halo binding; the next launch uses it.</li>
+<li>On a PC <code>resolution_scale</code> can be 1.0 or more, and on an NVIDIA RTX card the mod's DLSS option works (keep <code>nvngx_dlss.dll</code>). Keep <code>vr_action_mapping = 0</code> for the 1:1 layout. Steam's "Anti-Cheat Disabled" entry does not inject the mod on Windows: always start through the launcher.</li>
+</ol>
 
 <h2>Caveats</h2>
 <ul>
@@ -1884,7 +1952,7 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
 <tr><td>Bendy 622650</td><td>No BepInEx</td><td>Bendy VR 3641501148</td></tr>
 <tr><td>F.E.A.R. 21090</td><td>The stock game</td><td>F.E.A.R. VR 2341077394 (the mod's launcher)</td></tr>
 <tr><td>Halo MCC, PAYDAY 2</td><td colspan="2">Already split by Steam's own launch menu</td></tr>
-<tr><td>Deus Ex HR DC 238010, MGS V 287700, Max Payne 2 12150</td><td colspan="2">VR-only entries, red-labelled</td></tr>
+<tr><td>MGS V 287700, Max Payne 2 12150</td><td colspan="2">VR-only entries, red-labelled (Deus Ex HR DC 238010 is flat again: its VR mod was removed)</td></tr>
 <tr><td>Quake, Quake II, Quake III, Doom 3 BFG, AvP Classic</td><td>The Steam entries stay stock</td><td>Native shortcuts: Quake VR (Team Beef) 2316100907, Quake VR 2813758474, Quake II VR 3173477041, Quake III VR 3668573126, Doom 3 BFG VR 3138655638, AvP VR 4045669378</td></tr>
 <tr><td>GZDoom VR</td><td colspan="2">Shortcut-only: Doom VR, Brutal Doom VR, MyHouse VR, Doom VR (Gun Bonsai), Heretic VR, Hexen VR, Hexen Deathkings VR</td></tr>
 </table></div>
@@ -1893,6 +1961,15 @@ ssh frame "bash ~/PCVR/bin/avp_lowercase.sh"    # the game expects lowercase fil
 <pre><code>scp out\&lt;appid&gt;*.png frame:PCVR/art/&lt;game&gt;/
 ssh frame "python3 ~/PCVR/bin/apply_art.py ~/PCVR/art/&lt;game&gt;"
 # SteamClient.Apps.SetCustomArtworkForApp(id, base64, "png", kind): 0 capsule, 1 hero, 2 logo, 3 header</code></pre>
+<h2>Runs on the Frame, or streamed from a PC</h2>
+<p>Steam on the Frame also lists non-Steam shortcuts from the other computers on the network, for Remote Play. Those look like any other VR entry but stream from the PC. Since 2026-10-25 they carry a second, blue pill directly above the red VR pill: <strong>STREAM FROM PC</strong> (<code>add_stream_pill.ps1</code>, drawn over the existing art; it finds the red pill by colour). A first version put it at the bottom of the art, where the headset's library tiles cropped it off.</p>
+<div class="tablewrap"><table>
+<tr><th>Entry</th><th>Installed on</th></tr>
+<tr><td>Titanfall2VRLauncher 3623593364</td><td>a PC only (see <a href="#titanfall">Titanfall 2 VR</a>)</td></tr>
+<tr><td>DOOM (KHARVOX VR) 3045262426</td><td>a PC only</td></tr>
+<tr><td>Every other VR entry</td><td>The Frame (standalone), checked 2026-10-25</td></tr>
+</table></div>
+<p>To re-check, ask Steam where each entry is installed: <code>appStore.GetAppOverviewByAppID(id).per_client_data</code> lists the machines; a standalone entry shows this machine (client id 0) as installed.</p>
 </article>
 
 <!-- ===================== PARKED ===================== -->

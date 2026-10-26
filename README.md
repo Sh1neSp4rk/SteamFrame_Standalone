@@ -76,7 +76,7 @@ Failure patterns seen more than once:
 | [Unreal Revived VR](games/unreal-revived-vr/) | Proton, OpenXR (D3D12) | Working | Installed on a PC and copied in; Microsoft d3dcompiler; the frame_quadfix OpenXR layer for the menus |
 | [Far Cry VR](games/far-cry-vr/) | Proton, OpenVR (32-bit) | Working | Proxy openvr_api.dll plus a native overlay helper for the HUD and menus |
 | [Contractors VR](games/contractors/) | Proton, OpenVR | Working | Skip Unreal's bootstrapper |
-| [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK |
+| [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK; patched MCCVR (Halo 3 stereo and flicker fixes), Halo layer build of frame_quadfix, 1:1 Frame controls; same build streams from a Windows PC |
 | [Metal: Hellsinger VR](games/metal-hellsinger-vr/) | Proton, OpenXR | Working | One missing DLL (`mfc140u.dll`) |
 | [Snapshot VR](games/snapshot-vr/) | Proton, OpenXR | Working | Implicit OpenXR API layer |
 | [XCOM 2](games/xcom2/) | Proton (flat) | Working | Controller layout only |
