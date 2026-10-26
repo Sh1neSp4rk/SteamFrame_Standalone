@@ -1,0 +1,495 @@
+From 11a591018c5907304796cbe42899ed9c679b1e7d Mon Sep 17 00:00:00 2001
+From: Sh1neSp4rk <Sh1neSp4rk@users.noreply.github.com>
+Date: Mon, 26 Oct 2026 05:20:17 -0400
+Subject: [PATCH] Steam Frame: fix Halo 3 stereo, weapon flicker and in-game
+ tuning
+
+Halo 3 eye cover (the "cross-eyed / zoomed" fix): render both eyes with one
+symmetric cover, 1% wider than the widest native edge of either eye. The
+per-eye cover was published as one value (the last eye rendered), so the left
+eye failed containment and both slices went out at the right eye's cover FOV,
+which the Frame's compositor shows warped. Halo 3 now takes the native
+per-eye FOV + sub-rect path, as ODST already did.
+
+FP weapon flicker (right eye): keep each slot's interpolation context until a
+successful interpolation replaces it, and pose palette submissions with no
+matching context from the last pose of the same render model (arms and weapon
+are separate tags). FRAME_FP_REUSE=0 restores the stock behaviour.
+
+Tuning without a keyboard: FRAME_WORLD_SCALE sets the starting Halo 3 world
+scale, FRAME_STEREO_SCALE multiplies eye separation only.
+
+Diagnostics: FRAME-FLICKER counters and a one-shot draw-order trace, L3/R3
+edge logging, and dump_eyes.flag (writes both eye caches as BMPs).
+Menu: hide the duplicate "Quality of Life" page.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/dll/game.cpp                 | 219 +++++++++++++++++++++++++++++--
+ src/dll/halo3_dual_lifecycle.inl |  35 +++++
+ src/dll/input.cpp                |   8 ++
+ src/dll/menu.cpp                 |   4 +
+ src/dll/vr.cpp                   |  50 +++++++
+ 5 files changed, 307 insertions(+), 9 deletions(-)
+
+diff --git a/src/dll/game.cpp b/src/dll/game.cpp
+index 8215429..b1f8d37 100644
+--- a/src/dll/game.cpp
++++ b/src/dll/game.cpp
+@@ -276,7 +276,35 @@ namespace
+     // World scale: Halo world units per real meter (1 wu ~= 3.05 m), so ~0.33
+     // gives roughly 1:1 leaning. Offset is clamped so a bad value can't fling
+     // the camera through the level.
+-    std::atomic<float> g_worldScale{0.33f};
++    // Steam Frame: FRAME_WORLD_SCALE (set by the launch wrapper) overrides the
++    // starting value, so the felt size of the world can be tuned without the
++    // Page Up/Down keys. Clamped to the same range Game_LeanScale allows.
++    float InitialWorldScale() noexcept
++    {
++        char value[32]{};
++        if (GetEnvironmentVariableA("FRAME_WORLD_SCALE",value,sizeof value))
++        {
++            const float scale=static_cast<float>(atof(value));
++            if (scale>=0.05f && scale<=2.0f)
++                return scale;
++        }
++        return 0.33f;
++    }
++    std::atomic<float> g_worldScale{InitialWorldScale()};
++    // FRAME_STEREO_SCALE: eye-separation multiplier (depth strength only).
++    float ReadFrameStereoBoost() noexcept
++    {
++        char value[32]{};
++        if (GetEnvironmentVariableA("FRAME_STEREO_SCALE",value,sizeof value))
++        {
++            const float boost=static_cast<float>(atof(value));
++            if (boost>=0.5f && boost<=3.0f)
++                return boost;
++        }
++        return 1.0f;
++    }
++    const float g_frameStereoBoost=ReadFrameStereoBoost();
++    inline float FrameStereoBoost() noexcept { return g_frameStereoBoost; }
+     std::atomic<float> g_projectionTanX{1.091595f};
+     std::atomic<float> g_projectionTanY{1.114286f};
+     std::atomic<float> g_zoomFactor{1.0f}; // >1 while the player is zoomed (scope)
+@@ -288,6 +316,28 @@ namespace
+     // capture. VR samples them at exact OpenXR frame boundaries and the title
+     // worker writes a completed transition only after its post-roll is frozen.
+     std::atomic<uint64_t> g_perfViewRenders{0};
++    // FRAME-FLICKER diagnostics (Steam Frame build): why a visible FP palette
++    // falls back to the stock pose. Interp: calls/ok/countMismatch/indexBad/
++    // contextSet. Palette: calls/contextFound/reconstructed/notReconstructed/
++    // noContext/eye0/eye1/eyeNone/otherThread/scopeHidden.
++    std::atomic<uint64_t> g_flickInterp[5]{};
++    std::atomic<uint64_t> g_flickPalette[12]{};   // [10] = contexts reused, [11] = tag fallbacks
++    std::atomic<uint64_t> g_flickNoCtxEye[3]{};   // no-context palette calls by eye 0/1/none
++    std::atomic<uint64_t> g_flickInterpEye[3]{};  // slot-0 interpolations by eye 0/1/none
++    std::atomic<uint32_t> g_flickInterpThread{0};
++    // FRAME-FLICKER trace: a short burst of the exact interp/palette sequence
++    // (written once, ~10 s after stereo starts, then every 60 s).
++    struct FlickTraceEvent { uint64_t ms; const void* bones; int kind, eye, slot, view, ok; uint16_t tag; };
++    FlickTraceEvent g_flickTrace[96]{};
++    std::atomic<int> g_flickTraceCount{-1};   // -1 idle, 0..96 recording
++    std::atomic<uint64_t> g_flickTraceNextMs{0};
++    void FlickTrace(int kind,int slot,int view,int ok,uint16_t tag,const void* bones) noexcept
++    {
++        int i=g_flickTraceCount.load(std::memory_order_relaxed);
++        if (i<0 || i>=96) return;
++        if (g_flickTraceCount.compare_exchange_strong(i,i+1))
++            g_flickTrace[i]={GetTickCount64(),bones,kind,g_stereoEye.load(std::memory_order_relaxed),slot,view,ok,tag};
++    }
+     std::atomic<uint64_t> g_perfFpPaletteRequests[3]{};
+     std::atomic<uint64_t> g_perfFpPaletteFullSolves[3]{};
+     std::atomic<uint64_t> g_perfFpPaletteCacheHits[3]{};
+@@ -1151,6 +1201,7 @@ namespace
+         uint64_t lWristDescendants = 0;
+         uint32_t muzzleUnit=UINT32_MAX,muzzleWeapon=UINT32_MAX;
+         bool valid = false;
++        bool used = false;   // Steam Frame: already applied once (context reuse)
+     };
+ 
+     // Optional immutable inputs for title adapters whose render hooks already
+@@ -5374,7 +5425,52 @@ namespace
+         }
+         if (slot==0 || slot==1)
+         {
+-        g_fpInterpolationContexts[slot]={};
++        // Steam Frame: an interpolation that produces no bones used to wipe the
++        // slot's live context as well, so the palette submission that followed
++        // drew the stock pose. Only a call that produced bones replaces it
++        // (FRAME_FP_REUSE=0 restores the old always-reset behaviour).
++        static const bool keepOnFailure = [] {
++            char value[8]{};
++            const DWORD n=GetEnvironmentVariableA("FRAME_FP_REUSE",value,sizeof value);
++            return !(n && value[0]=='0');
++        }();
++        FlickTrace(0,slot,view,result?1:0,0,(outBones && result)?static_cast<const void*>(*outBones):nullptr);
++        // Once: who drives the per-frame FP interpolation that runs outside
++        // the stereo eye loop (eye=-1)? Logged as module offsets.
++        if (slot==0 && g_stereoEye.load(std::memory_order_relaxed)<0 && VR_IsStereoEnabled())
++        {
++            static std::atomic<bool> loggedMonoStack{false};
++            if (!loggedMonoStack.exchange(true))
++            {
++                void* frames[24]{};
++                const USHORT n=RtlCaptureStackBackTrace(0,24,frames,nullptr);
++                char line[1400]; int used=0;
++                for (USHORT i=0;i<n && used<1300;++i)
++                {
++                    HMODULE m=nullptr; char name[64]="?";
++                    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|
++                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
++                            static_cast<LPCSTR>(frames[i]),&m) && m)
++                    {
++                        char path[MAX_PATH]{}; GetModuleFileNameA(m,path,MAX_PATH);
++                        const char* base=strrchr(path,'\\'); strncpy_s(name,base?base+1:path,_TRUNCATE);
++                    }
++                    used+=_snprintf_s(line+used,sizeof line-used,_TRUNCATE," %s+0x%llX",name,
++                        static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(frames[i])-
++                        reinterpret_cast<uintptr_t>(m)));
++                }
++                LOG("FRAME-FLICKER mono FP pass stack:%s",line);
++            }
++        }
++        if (!keepOnFailure || (result && outBones && outCount && *outBones))
++            g_fpInterpolationContexts[slot]={};
++        if (slot==0)
++        {
++            g_flickInterp[0].fetch_add(1,std::memory_order_relaxed);
++            g_flickInterpThread.store(GetCurrentThreadId(),std::memory_order_relaxed);
++            const int interpEye=g_stereoEye.load(std::memory_order_relaxed);
++            g_flickInterpEye[interpEye==0?0:(interpEye==1?1:2)].fetch_add(1,std::memory_order_relaxed);
++        }
+         if (result && outBones && outCount && *outBones)
+         {
+             const int count=*outCount;
+@@ -5383,9 +5479,17 @@ namespace
+             const int cameraControl=g_fpOrientationIndex[slot].load(std::memory_order_acquire);
+             const int elbow=g_fpElbowIndex[slot].load(std::memory_order_acquire);
+             const int shoulder=g_fpShoulderIndex[slot].load(std::memory_order_acquire);
++            if (slot==0)
++            {
++                g_flickInterp[1].fetch_add(1,std::memory_order_relaxed);
++                if (cached!=count) g_flickInterp[2].fetch_add(1,std::memory_order_relaxed);
++                else if (!(wrist>=0 && wrist<count && cameraControl>=0 && cameraControl<count))
++                    g_flickInterp[3].fetch_add(1,std::memory_order_relaxed);
++            }
+             if (count>0 && count<=64 && cached==count &&
+                 wrist>=0 && wrist<count && cameraControl>=0 && cameraControl<count)
+             {
++                if (slot==0) g_flickInterp[4].fetch_add(1,std::memory_order_relaxed);
+                 auto& context=g_fpInterpolationContexts[slot];
+                 context.source=*outBones;
+                 context.generation=g_halo3RuntimeGeneration.load(std::memory_order_acquire);
+@@ -6552,20 +6656,91 @@ namespace
+             if (candidate.valid && source && candidate.source==source)
+             {
+                 context=candidate;
+-                candidate.valid=false;
++                // Steam Frame: Halo 3 can submit the same interpolated FP bones
++                // to the visible palette more than once per interpolation (the
++                // extra submissions found no context and drew the stock pose:
++                // the VR/flat weapon flicker). Keep the context until the next
++                // interpolation of this slot replaces it, unless FRAME_FP_REUSE=0.
++                // A new interpolation always resets the slot, so a later frame
++                // can never reuse it.
++                static const bool reuseContext = [] {
++                    char value[8]{};
++                    const DWORD n=GetEnvironmentVariableA("FRAME_FP_REUSE",value,sizeof value);
++                    return !(n && value[0]=='0');
++                }();
++                if (candidate.used)
++                    g_flickPalette[10].fetch_add(1,std::memory_order_relaxed);
++                candidate.used=true;
++                if (!reuseContext)
++                    candidate.valid=false;
+                 break;
+             }
++        // Steam Frame: in the right-eye pass Halo 3 also submits FP palettes
++        // whose source bank matches no captured interpolation (about one per
++        // frame), and those drew the stock pose - the VR/flat weapon flicker.
++        // When such a submission is for the same render model (tag) this
++        // thread last posed, pose it from that interpolation's snapshot too.
++        // FRAME_FP_REUSE=0 disables this.
++        // One entry per render model: Halo 3 draws the arms (e.g. tag 3503) and
++        // the weapon (e.g. 1157) as separate palettes from the same bones, and
++        // a single remembered entry rescued only the last one (arms drawn flat).
++        struct LastPosed { uint16_t tag; FpInterpolationContext context; };
++        static thread_local LastPosed lastPosed[8]{};
++        static thread_local unsigned lastPosedNext=0;
++        static const bool tagFallback = [] {
++            char value[8]{};
++            const DWORD n=GetEnvironmentVariableA("FRAME_FP_REUSE",value,sizeof value);
++            return !(n && value[0]=='0');
++        }();
++        const BoneMatrix* matchSource=source;
++        const bool directContext=context.valid;
++        if (!context.valid && tagFallback && source)
++            for (const auto& posed : lastPosed)
++                if (posed.context.valid && posed.tag==tag &&
++                    posed.context.generation==g_halo3RuntimeGeneration.load(std::memory_order_acquire))
++                {
++                    context=posed.context;
++                    matchSource=context.source;
++                    g_flickPalette[11].fetch_add(1,std::memory_order_relaxed);
++                    break;
++                }
+         const BoneMatrix* selectedSource=source;
+         // Never let the visible palette consume the live buffer after the
+         // marker/effect preservation rewrite. If the final reconstruction is
+         // temporarily unavailable (for example while a new weapon's authored
+         // relation is publishing), use the untouched snapshot for this frame.
+-        if (context.valid && source==context.source)
++        if (context.valid && matchSource==context.source)
+             selectedSource=g_fpUnmodifiedInterpolations[context.slot];
+         bool reconstructed=false;
+         if (root && source)
+             reconstructed=ReconstructVisiblePaletteSource(
+-                tag,context,*root,source,selectedSource);
++                tag,context,*root,matchSource,selectedSource);
++        if (reconstructed && context.valid && context.slot>=0 && context.slot<=1 &&
++            matchSource==source)
++        {
++            LastPosed* entry=nullptr;
++            for (auto& posed : lastPosed)
++                if (posed.context.valid && posed.tag==tag) { entry=&posed; break; }
++            if (!entry) entry=&lastPosed[lastPosedNext++ % 8];
++            *entry={tag,context};
++        }
++        FlickTrace(1,context.valid?context.slot:-1,-1,
++                   (directContext?1:(context.valid?2:0))+(reconstructed?10:0),tag,source);
++        if (!context.valid || context.slot==0)
++        {
++            g_flickPalette[0].fetch_add(1,std::memory_order_relaxed);
++            g_flickPalette[context.valid?1:4].fetch_add(1,std::memory_order_relaxed);
++            if (context.valid)
++                g_flickPalette[reconstructed?2:3].fetch_add(1,std::memory_order_relaxed);
++            const int eye=g_stereoEye.load(std::memory_order_relaxed);
++            g_flickPalette[eye==0?5:(eye==1?6:7)].fetch_add(1,std::memory_order_relaxed);
++            if (!context.valid)
++                g_flickNoCtxEye[eye==0?0:(eye==1?1:2)].fetch_add(1,std::memory_order_relaxed);
++            if (GetCurrentThreadId()!=g_flickInterpThread.load(std::memory_order_relaxed))
++                g_flickPalette[8].fetch_add(1,std::memory_order_relaxed);
++            if (g_scopeRenderActive.load(std::memory_order_acquire))
++                g_flickPalette[9].fetch_add(1,std::memory_order_relaxed);
++        }
+         FpInterpolationContext contactContext = context;
+         if (reconstructed && root && selectedSource == g_fpPaletteScratch &&
+             g_fpStereoSolveScope.anatomicalTracking.handAlignment)
+@@ -10293,7 +10468,10 @@ namespace
+                 cutsceneTheater,
+                 g_config.cutscene_theater_depth,
+                 eyePosition, eyeOrientation);
+-            const float eyeScale=g_worldScale.load();
++            // Steam Frame: FRAME_STEREO_SCALE multiplies only the eye
++            // separation (depth strength), independent of the world scale
++            // that sizes head motion, the world and the weapons.
++            const float eyeScale=g_worldScale.load()*FrameStereoBoost();
+             for(int axis=0;axis<3;++axis)
+                 pos[axis] += (right[axis]*eyePosition[0] +
+                               up[axis]*eyePosition[1] -
+@@ -10339,12 +10517,33 @@ namespace
+                 float eyeFov[4];
+                 float immersiveTangentX = tanf(1.07338f);
+                 float immersiveTangentY = tanf(0.92502f);
+-                if (VR_GetEyeFov(eye, eyeFov))
++                float otherFov[4];
++                if (VR_GetEyeFov(eye, eyeFov) && VR_GetEyeFov(1 - eye, otherFov))
++                {
++                    // Steam Frame: one symmetric cover for BOTH eyes, 1% wider
++                    // than the widest native edge of either. The per-eye cover
++                    // (left 58.8/60.0, right 59.4/59.5 deg) was published as a
++                    // single value (the last eye rendered), so the left eye
++                    // failed containment and both slices were submitted at the
++                    // right eye's cover: the left image was stretched against
++                    // its raster (cross-eyed, magnified). A shared cover keeps
++                    // the published value true for both eyes and lets the
++                    // native per-eye FOV + sub-rect path run, as for ODST.
++                    float halfX = 0.0f, halfY = 0.0f;
++                    for (const float* f : {eyeFov, otherFov})
++                    {
++                        halfX = fmaxf(halfX, fmaxf(-f[0], f[1]));
++                        halfY = fmaxf(halfY, fmaxf(f[2], -f[3]));
++                    }
++                    immersiveTangentX = tanf(halfX) * 1.01f;
++                    immersiveTangentY = tanf(halfY) * 1.01f;
++                }
++                else if (VR_GetEyeFov(eye, eyeFov))
+                 {
+                     immersiveTangentX =
+-                        tanf(fmaxf(-eyeFov[0], eyeFov[1]));
++                        tanf(fmaxf(-eyeFov[0], eyeFov[1])) * 1.01f;
+                     immersiveTangentY =
+-                        tanf(fmaxf(eyeFov[2], -eyeFov[3]));
++                        tanf(fmaxf(eyeFov[2], -eyeFov[3])) * 1.01f;
+                 }
+                 const bool preserveAuthoredProjection =
+                     UseAuthoredCutsceneProjection(
+@@ -15072,6 +15271,8 @@ namespace
+         TitleAdapter_PublishMode(
+             GameTitle::Halo3, runtimeGeneration, RuntimeMode::Loading);
+         LOG("M1: camera hooked. F2 head tracking, F3 recenter, F6 leaning, F8/F9 pitch trim, F10 screen-follow (yaw/pitch/up flips: F1 menu)");
++        LOG("world scale %.3f game units per metre (FRAME_WORLD_SCALE overrides 0.33), stereo separation x%.2f (FRAME_STEREO_SCALE)",
++            g_worldScale.load(), FrameStereoBoost());
+ 
+         RememberInstalledGameHook(target);
+         // Comfort invariant: the OpenXR pose, not Halo's authored screen-shake
+diff --git a/src/dll/halo3_dual_lifecycle.inl b/src/dll/halo3_dual_lifecycle.inl
+index 85defe4..ec72fcf 100644
+--- a/src/dll/halo3_dual_lifecycle.inl
++++ b/src/dll/halo3_dual_lifecycle.inl
+@@ -138,6 +138,41 @@ void ReportHalo3DualAim()
+         g_halo3Dual.refused.exchange(0));
+     LOG("Halo 3 dual native targeting: queries=%llu restoreRefused=%llu option=%d",
+         g_halo3Dual.nativeQueries.exchange(0),g_halo3Dual.targetRestoresRefused.exchange(0),g_config.independent_dual_aim?1:0);
++    LOG("FRAME-FLICKER interp calls=%llu ok=%llu countMismatch=%llu indexBad=%llu context=%llu | "
++        "palette calls=%llu context=%llu reconstructed=%llu notReconstructed=%llu noContext=%llu "
++        "eye0=%llu eye1=%llu eyeNone=%llu otherThread=%llu scope=%llu",
++        g_flickInterp[0].exchange(0),g_flickInterp[1].exchange(0),g_flickInterp[2].exchange(0),
++        g_flickInterp[3].exchange(0),g_flickInterp[4].exchange(0),
++        g_flickPalette[0].exchange(0),g_flickPalette[1].exchange(0),g_flickPalette[2].exchange(0),
++        g_flickPalette[3].exchange(0),g_flickPalette[4].exchange(0),g_flickPalette[5].exchange(0),
++        g_flickPalette[6].exchange(0),g_flickPalette[7].exchange(0),g_flickPalette[8].exchange(0),
++        g_flickPalette[9].exchange(0));
++    LOG("FRAME-FLICKER reused=%llu tagFallback=%llu", g_flickPalette[10].exchange(0),
++        g_flickPalette[11].exchange(0));
++    {
++        const uint64_t now=GetTickCount64();
++        if (g_flickTraceCount.load()>=96)
++        {
++            const uint64_t base=g_flickTrace[0].ms;
++            for (int i=0;i<96;++i)
++            {
++                const auto& e=g_flickTrace[i];
++                LOG("FRAME-FLICKER trace %02d +%llums %s eye=%d slot=%d view=%d %s=%d tag=%04X bones=%p",
++                    i,e.ms-base,e.kind==0?"INTERP ":"PALETTE",e.eye,e.slot,e.view,
++                    e.kind==0?"ok":"ctx",e.ok,(unsigned)e.tag,e.bones);
++            }
++            g_flickTraceCount.store(-1);
++            g_flickTraceNextMs.store(now+60000);
++        }
++        else if (g_flickTraceCount.load()<0 && VR_IsStereoEnabled())
++        {
++            if (!g_flickTraceNextMs.load()) g_flickTraceNextMs.store(now+10000);
++            else if (now>=g_flickTraceNextMs.load()) g_flickTraceCount.store(0);
++        }
++    }
++    LOG("FRAME-FLICKER by eye: noContext L/R/none=%llu/%llu/%llu interp L/R/none=%llu/%llu/%llu",
++        g_flickNoCtxEye[0].exchange(0),g_flickNoCtxEye[1].exchange(0),g_flickNoCtxEye[2].exchange(0),
++        g_flickInterpEye[0].exchange(0),g_flickInterpEye[1].exchange(0),g_flickInterpEye[2].exchange(0));
+     LOG("Halo 3 barrel trajectory: enabled=%d fault=%d applied=%llu refused=%llu option=%d",
+         g_halo3Muzzle.enabled.load()?1:0,g_halo3Muzzle.faulted.load()?1:0,
+         g_halo3Muzzle.applied.exchange(0),g_halo3Muzzle.refused.exchange(0),g_config.gun_barrel_aim?1:0);
+diff --git a/src/dll/input.cpp b/src/dll/input.cpp
+index 85ea450..a8b5251 100644
+--- a/src/dll/input.cpp
++++ b/src/dll/input.cpp
+@@ -138,6 +138,14 @@ namespace
+             Game_AllowsSharedGameplayFeatures();
+         const MenuChordResult chord =
+             g_menuChord.Update(GetTickCount64(), pad.clickL, pad.clickR);
++        {
++            // Steam Frame diagnostic: does the XInput merge see both clicks?
++            static bool bothSeen = false;
++            const bool both = pad.clickL && pad.clickR;
++            if (both && !bothSeen)
++                LOG("L3+R3 held in XInput merge (toggled=%d)", chord.toggled ? 1 : 0);
++            bothSeen = both;
++        }
+         if (chord.toggled)
+         {
+             // The same one-shot chord edge owns both actions. Game_Recenter
+diff --git a/src/dll/menu.cpp b/src/dll/menu.cpp
+index 8fc4d5a..267a849 100644
+--- a/src/dll/menu.cpp
++++ b/src/dll/menu.cpp
+@@ -504,6 +504,10 @@ namespace
+             // stay wired below; product two-hand controls live in Weapon & Aim.
+             if (i == Cat_TwoHandLab)
+                 continue;
++            // Steam Frame build: "Quality of Life" only repeats every other
++            // page's controls as collapsible sections; keep the sidebar short.
++            if (i == Cat_QualityOfLife)
++                continue;
+             const bool selected = g_activeCategory == i;
+             if (ImGui::Selectable(kCategories[i].label, selected))
+             {
+diff --git a/src/dll/vr.cpp b/src/dll/vr.cpp
+index 2287c87..40cae85 100644
+--- a/src/dll/vr.cpp
++++ b/src/dll/vr.cpp
+@@ -7285,6 +7285,21 @@ float4 ps_scope_linearize(VSOut i):SV_Target { return paint(i.uv,true); }
+ 
+     void ValidateStereoImagesOnce()
+     {
++        // Steam Frame: "dump_eyes.flag" next to the log re-runs this check and
++        // writes both eye caches as half-size BMPs (HaloMCCVR-eye0/1.bmp).
++        bool dumpRequested = false;
++        {
++            static unsigned polls = 0;
++            if (LogDirectory()[0] && ++polls % 30 == 0)
++            {
++                wchar_t flag[MAX_PATH];
++                _snwprintf_s(flag, _TRUNCATE, L"%sdump_eyes.flag", LogDirectory());
++                if (DeleteFileW(flag))
++                    dumpRequested = true;
++            }
++        }
++        if (dumpRequested)
++            g_stereoValidationDone = false;
+         if (g_stereoValidationDone || !g_eyeHasImage[0] || !g_eyeHasImage[1] ||
+             !g_eyeCache[0] || !g_eyeCache[1])
+             return;
+@@ -7344,6 +7359,39 @@ float4 ps_scope_linearize(VSOut i):SV_Target { return paint(i.uv,true); }
+             const double changedPercent = samples ? (100.0 * changed / samples) : 0.0;
+             LOG("M2 VALIDATION: distinct eye pixels mean RGB delta=%.3f, changed samples=%.1f%% (%u/%u)",
+                 meanChannelDelta, changedPercent, changed, samples);
++            if (dumpRequested)
++            {
++                const unsigned scale = 2;
++                const unsigned w = g_eyeCacheDesc.Width / scale, h = g_eyeCacheDesc.Height / scale;
++                for (int eye = 0; eye < 2 && w && h; ++eye)
++                {
++                    wchar_t path[MAX_PATH];
++                    _snwprintf_s(path, _TRUNCATE, L"%sHaloMCCVR-eye%d.bmp", LogDirectory(), eye);
++                    FILE* file = _wfsopen(path, L"wb", _SH_DENYNO);
++                    if (!file) continue;
++                    const uint32_t rowBytes = (w * 3 + 3) & ~3u, imageBytes = rowBytes * h;
++                    uint8_t header[54] = {'B', 'M'};
++                    auto put32 = [&](size_t at, uint32_t v) { std::memcpy(header + at, &v, 4); };
++                    auto put16 = [&](size_t at, uint16_t v) { std::memcpy(header + at, &v, 2); };
++                    put32(2, 54 + imageBytes); put32(10, 54); put32(14, 40); put32(18, w); put32(22, h);
++                    put16(26, 1); put16(28, 24); put32(34, imageBytes);
++                    fwrite(header, 1, sizeof(header), file);
++                    std::vector<uint8_t> row(rowBytes, 0);
++                    const auto* base = static_cast<const unsigned char*>(mapped[eye].pData);
++                    for (unsigned y = h; y-- > 0;)
++                    {
++                        const auto* src = base + (y * scale) * mapped[eye].RowPitch;
++                        for (unsigned x = 0; x < w; ++x)
++                        {
++                            const unsigned o = x * scale * 4;
++                            row[x * 3 + 0] = src[o + 2]; row[x * 3 + 1] = src[o + 1]; row[x * 3 + 2] = src[o + 0];
++                        }
++                        fwrite(row.data(), 1, rowBytes, file);
++                    }
++                    fclose(file);
++                }
++                LOG("M2 eye dump written: HaloMCCVR-eye0.bmp / eye1.bmp (%ux%u)", w, h);
++            }
+         }
+         else
+         {
+@@ -13854,6 +13902,8 @@ float4 ps_scope_linearize(VSOut i):SV_Target { return paint(i.uv,true); }
+         if (pad.b && !previousPad.b) LOG("controller edge: B");
+         if (pad.x && !previousPad.x) LOG("controller edge: X");
+         if (pad.y && !previousPad.y) LOG("controller edge: Y");
++        if (pad.clickL && !previousPad.clickL) LOG("controller edge: L3");
++        if (pad.clickR && !previousPad.clickR) LOG("controller edge: R3");
+         previousPad = pad;
+         // Keep the pointer click private while suppressing all gameplay
+         // consumers (including camera snapshots that bypass XInput).
+-- 
+2.55.0.windows.5
+

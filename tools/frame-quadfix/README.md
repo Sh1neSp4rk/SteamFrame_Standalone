@@ -19,5 +19,6 @@ The script's paths are Unreal Revived's (`~/PCVR/UnrealRevivedVR`, `C:\Games\Unr
 
 - [quadfix.c](quadfix.c): the layer.
 - [build.sh](build.sh): build, manifest, install and registration.
+- [halo/](halo/): the Halo MCC VR build: the same layer plus a View/D-pad-to-XInput bridge, head-locked quad handling (`FRAMEXR_QUAD=norm`) and a process check so it also works on a Windows PC streaming to the Frame.
 
 MIT, like the rest of this repository.

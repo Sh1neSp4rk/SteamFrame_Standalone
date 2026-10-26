@@ -45,7 +45,7 @@ Failure patterns seen more than once:
 
 - A launcher runs before the game and stops on a dialog nobody can see in VR (Contractors, Halo MCC, FighterZ). Fix: a wrapper script that swaps the executable Steam starts.
 - Steam's install script overwrites Proton's ARM64 runtime DLLs with Microsoft x86-64 ones and the prefix cannot boot (Halo MCC). Fix: restore Proton's copies.
-- A mod's x86-64 DLL cannot load an ARM64 runtime DLL from the prefix (Borderlands VR, Deus Ex HR VR). Fix: an x86-64 copy beside the executable.
+- A mod's x86-64 DLL cannot load an ARM64 runtime DLL from the prefix (Borderlands VR, Deus Ex HR VR, Unreal Revived VR). Fix: an x86-64 copy beside the executable.
 - A VR mod that patches Direct3D in memory crashes on ARM64 DXVK (Halo MCC VR). Fix: Proton's x86-64 DXVK beside the exe.
 - Strict OpenXR: SteamVR on the Frame refuses an instance that enables `XR_FB_foveation` without `XR_FB_swapchain_update_state` (Unity OpenXR 1.14 games). Fix: a 70 KB implicit API layer.
 - A game below about 20 fps shows a black world with its menus intact: SteamVR blanks it. Lower the resolution.
@@ -64,19 +64,19 @@ Failure patterns seen more than once:
 | [Selaco VR](games/selaco-vr/) | Native, OpenVR | Working | Windows build dies under FEX; legacy-input binding |
 | [Aliens versus Predator VR](games/avp-vr/) | Native, OpenXR | Working | First native port; keyboard patch |
 | [Counter-Strike VR](games/counter-strike-vr/) | Native, OpenXR | Working | Team Beef's Quest port on Xash3D; menu cylinder replaced by a quad; bumper, view and d-pad actions added |
+| [Jedi Academy VR and Jedi Outcast VR](games/jedi-knight-vr/) | Native, Vulkan + OpenXR | Working | JKXRL built for ARM64; multi-draw indirect off and per-game tiling mode for Turnip |
 | [DUSK HD VR](games/dusk-hd-vr/) | Proton, OpenVR | Working | Virtual pad stand-in, stripped Harmony patches, uinput pad |
 | [F.E.A.R. VR](games/fear-vr/) | Proton, OpenXR | Working | Proton verb swap for the launcher handoff |
 | [Left 4 Dead 2 VR](games/l4d2-vr/) | Proton, OpenVR | Working | Mod DLL patched for FEX load times |
 | [Portal 2 VR](games/portal2-vr/) | Proton, OpenVR | Working, controls unconfirmed | Shares the L4D2 binding |
 | [Bendy VR](games/bendy-vr/) | Proton, OpenVR | Working | Needs the `release-1.5` Steam branch |
-| [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Working | x86-64 vcruntime beside the host |
 | [Red Faction VR](games/red-faction-vr/) | Proton, OpenXR (32-bit) | Working | Mod patched and rebuilt for the standard layout; single-profile binding rule |
 | [Hollow Knight VR](games/hollow-knight-vr/) | Proton, OpenVR | Working | DUSK recipe plus a plugin for pause and the d-pad |
 | [Circuit Superstars VR](games/circuit-superstars-vr/) | Proton, OpenVR | Working | Gamepad-only mod; a plugin drives a virtual pad from the SteamVR actions |
 | [Unreal Revived VR](games/unreal-revived-vr/) | Proton, OpenXR (D3D12) | Working | Installed on a PC and copied in; Microsoft d3dcompiler; the frame_quadfix OpenXR layer for the menus |
 | [Far Cry VR](games/far-cry-vr/) | Proton, OpenVR (32-bit) | Working | Proxy openvr_api.dll plus a native overlay helper for the HUD and menus |
 | [Contractors VR](games/contractors/) | Proton, OpenVR | Working | Skip Unreal's bootstrapper |
-| [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK |
+| [Halo: MCC (flat + VR mod)](games/halo-mcc/) | Proton | Working | Prefix repair, wrapper, x86-64 DXVK; patched MCCVR (Halo 3 stereo and flicker fixes), Halo layer build of frame_quadfix, 1:1 Frame controls; same build streams from a Windows PC |
 | [Metal: Hellsinger VR](games/metal-hellsinger-vr/) | Proton, OpenXR | Working | One missing DLL (`mfc140u.dll`) |
 | [Snapshot VR](games/snapshot-vr/) | Proton, OpenXR | Working | Implicit OpenXR API layer |
 | [XCOM 2](games/xcom2/) | Proton (flat) | Working | Controller layout only |
@@ -88,6 +88,7 @@ Failure patterns seen more than once:
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
 | [Titanfall 2 VR](games/titanfall2-vr/) | Streamed only | Not standalone | Needs the mod's installer window on a PC |
 | [Tribes 2 VR](games/tribes2-vr/) | Proton (32-bit) | Dead end | Mod runs; TribesNext login crashes under FEX, 2D shell cannot fuse on the Frame's lenses |
+| [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Removed | Worked at 18 to 36 fps reprojected with eleven inputs; not worth keeping. Lessons recorded |
 
 ## Controller layout
 
@@ -131,11 +132,11 @@ Please keep personal data out (no Steam account ids, user names or email address
 
 The documentation, the guide site and the original scripts in this repository are released under the [MIT License](LICENSE).
 
-The ports and mods this repository builds on are separate projects with their own licenses, several of them GPL (GZDoom and SelacoVR, DarkPlaces and the Team Beef Quake ports, Yamagi Quake II, ioquake3, ioRTCW/RealRTCW, RBDoom3BFG, the AvP source, Xash3D FWGS under CSVR). Only patches and build or binding scripts for them are included here, and the patch scripts that carry replacement source fragments are offered under the same license as the code they patch. No game data, mod binaries or built binaries are distributed. Game data must come from your own copies of the games on Steam.
+The ports and mods this repository builds on are separate projects with their own licenses, several of them GPL (GZDoom and SelacoVR, DarkPlaces and the Team Beef Quake ports, Yamagi Quake II, ioquake3, ioRTCW/RealRTCW, RBDoom3BFG, the AvP source, Xash3D FWGS under CSVR, OpenJK under JKXRL). Only patches and build or binding scripts for them are included here, and the patch scripts that carry replacement source fragments are offered under the same license as the code they patch. No game data, mod binaries or built binaries are distributed. Game data must come from your own copies of the games on Steam.
 
 ## Credits
 
-- [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR, CSVR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games; the Xash3D FWGS, ReGameDLL_CS and YaPB projects under CSVR
+- [Team Beef](https://github.com/Team-Beef-Studios) for QuakeQuest, Quake2Quest, RealRTCWXR, CSVR and BendyVR, and GameOrDie007 for the PC VR ports of the Quake games; the Xash3D FWGS, ReGameDLL_CS and YaPB projects under CSVR; Patola for JKXRL (the Linux fork of Team Beef's JKXR) and the OpenJK project under it
 - [emawind84/SelacoVR](https://github.com/emawind84/SelacoVR), [hh79/gzdoomvr](https://github.com/hh79/gzdoomvr) and jantyka's gzdoomvr lineage for the Doom-engine VR builds
 - [RippeR37/q3vr](https://github.com/RippeR37/q3vr), [vittorioromeo/quakevr](https://github.com/vittorioromeo/quakevr), [NPi2Loup/DOOM-3-BFG-VR](https://github.com/NPi2Loup/DOOM-3-BFG-VR), [Bassquake/Aliens-Versus-Predator-VR](https://github.com/Bassquake/Aliens-Versus-Predator-VR)
 - sd805 (l4d2vr), Spencer0187 (portal2vr-roomscale), Astienth (Dusk_HD_VR), thefreemike31 (fear-vr), farmerarmor (DeusExHRVR), moistman42069 (MCCVR), mohamad-balouza (bioshock-vr), Mastersellz (BL1GOTYVR), 7empest (Half-Life: VR Mod), praydog (UEVR), CircuitLord (Titanfall 2 VR), Bruhlitz (Tribes2VRmod), kwstasg (Unreal Revived) and OldUnreal, fholger (farcry_vrmod), Cactus VR Studios (alpinefactionVR, on GooberRF's Alpine Faction), Astienth (Circuit_Superstars_VR, UnityVR_Bepinex), the Hollow Knight VR Enhanced authors, Nefarius (ViGEm client)

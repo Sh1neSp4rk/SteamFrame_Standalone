@@ -46,6 +46,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed (Red Faction VR):** SteamVR builds a Proton OpenXR app's input context from auto-generated defaults in `~/.config/openvr/config/openxr/steam.app.<id>_<type>_N_binding.json`, rewritten every launch, and only honours a user-selected custom binding when that context holds a single interaction profile. An app that suggests both Touch and Index bindings keeps its defaults. Making the Index default unwritable (a read-only `{}`) produces `SetXrInputConfig failed. Unable to write` and `Loading 1 bindings`, after which the custom file applies.
 - A custom file typed `controller_type: oculus_touch` is treated as Touch paths and pushed through the Frame remap, which drives each hand's trigger and bumper from the one Touch trigger; type it `frame_controller` instead.
 - A file carrying a haptic entry for an action the app does not define (`Unknown action ... when loading binding file`) is dropped whole; keep `"haptics": []`.
+- **Hand-agnostic actions:** a mod whose OpenXR actions are not tied to a hand (DeusExHRVR) can be rebound to the Frame directly; its second suggested profile (the simple controller) has to be locked to an empty `{}` first.
 - **Without a VR restart:** an API layer that forwards only the game's Touch suggestion from `xrSuggestInteractionProfileBindings` ([tools/frame-quadfix](tools/frame-quadfix/), `FRAMEXR_PROFILES`) keeps the context at one profile, and a `frame_controller`-typed binding written over the auto-generated `steam.app.<id>_oculus_touch_0_binding.json` and made read-only is loaded at the next launch (Unreal Revived VR). No `steamvr.vrsettings` edit and no session restart.
 - **Who:** Valve (SteamVR OpenXR input for Proton apps).
 
@@ -84,6 +85,22 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** a mod that presents a 2D screen by submitting the same image to both eyes at full texture bounds (Tribes 2 VR's shell: "no eye crop available - submitting full bounds, image will double") shows doubled menus. The Frame's per-eye projections are wide and mirror-asymmetric: raw tangents left -1.65, right 1.22, top -1.73, bottom 1.17. The same pixel sits at a different angle in each eye, so a shared image can never line up.
 - **Workaround for mod authors:** crop each eye from the submitted image using the `GetProjectionRaw` tangents, or render the screen quad per eye with the headset projection, or put 2D screens on an overlay. Headsets with symmetric lenses hide this bug.
+
+### One field-of-view value for two asymmetric eyes: cross-eyed and magnified
+
+- **Observed (Halo MCC VR, Halo 3):** the mod rendered each eye with a symmetric cover sized to that eye's lens (Frame: left 58.8° out / 60.0° down, right 59.4° / 59.5°) but published a single cover value for both eyes: the last eye rendered. The left eye then failed the mod's containment check, every frame fell back to submitting the whole slice at the cover FOV, and the left image was labelled with the right eye's angles. In the headset: cross-eyed, zoomed in, weak depth. ODST, which stores one value per eye, looked right.
+- **Workaround for mod authors:** keep one projection per eye all the way to `XrCompositionLayerProjectionView.fov`, or render both eyes with one shared cover wide enough for both lenses (the Halo patch uses the widest native edge of either eye ×1.01) and crop each eye with `imageRect`. Headsets with mirror-symmetric lenses hide the bug ([games/halo-mcc](games/halo-mcc/)).
+
+### A head-locked quad plus another quad is rejected
+
+- **Observed (Halo MCC VR):** frames carrying the projection layer, a world-space crosshair quad and a quad in a `VIEW` reference space (the mod's menu, 1.2 m ahead) were rejected: `XR_ERROR_POSE_INVALID`. Moving the head-locked quad into the projection space alone did not help; leaving the crosshair quad out while the menu is up did. Projection plus one quad of either kind is accepted.
+- **Workaround:** the Halo build of the layer ([tools/frame-quadfix/halo](tools/frame-quadfix/halo/), `FRAMEXR_QUAD=norm`) re-expresses `VIEW`-space quads in the projection space and drops the other quads while one is present.
+- **Who:** Valve (SteamVR's OpenXR compositor on the Frame).
+
+### A locked custom binding for an older action list loads nothing
+
+- **Observed:** SteamVR matches an app's generated `steam.app.<id>_oculus_touch_N_binding.json` to the app's exact list of actions. After a mod update or an API layer adds actions, SteamVR tries to write a new default, fails on the read-only file, logs `SetXrInputConfig: Loading 0 bindings` and no controller input reaches the app at all.
+- **Workaround:** move the old files aside, launch once so SteamVR writes a fresh `_0` default (that launch uses its automatic layout), overwrite that file with the Frame binding and lock it ([watchbind.sh](scripts/halo-mcc/watchbind.sh), [apply-frame-binding.ps1](scripts/halo-mcc/windows/apply-frame-binding.ps1)). Stick clicks belong inside the joystick source (`inputs: { position, click }`).
 
 ### SteamVR blanks the world below about 20 fps
 
@@ -130,6 +147,23 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** in Quake VR: Unleashed any bloom amount, even 0.08, turned the eye images black through zink while the game ran at 72 Hz and its menus and hand pointers drew normally. Caught with mirror screenshots with the headset awake. Not traced further.
 - **Who:** unknown; the mod's bloom pass or zink.
+
+### Vulkan on Turnip: multi-draw indirect costs about 80 ms a frame
+
+- **Observed:** a Vulkan renderer that batches level geometry into indirect multi-draws (JKXRL, Jedi Academy's `t1_sour`) spent about 80 ms a frame on the Frame's Turnip driver, 10 to 12 fps. The same scene through the renderer's non-indirect path takes about 5 ms at full resolution. Measured with the headset worn from the renderer's own GPU timing.
+- **Workaround:** use the non-indirect draw path (`JKXR_NO_MDI=1` in [jk_port.py](scripts/jedi-knight-vr/jk_port.py)).
+- **Who:** Mesa (Turnip).
+
+### Vulkan on Turnip: tiled rendering costs 40 to 50 µs per model draw
+
+- **Observed:** in model-heavy scenes (Jedi Outcast's `kejim_post`, 300 to 1,800 model draws a frame) the GPU's normal tiled (GMEM) mode cost 40 to 50 µs per draw, 48 ms a frame. `TU_DEBUG=sysmem` (render straight to memory) brought it to 11 ms (max 98 to 22), but slows a light scene (Academy's `t1_sour`) from 5 to 12 ms.
+- **Workaround:** choose the mode per game: sysmem for Outcast, tiled for Academy. Resolution, model detail, GPU skinning and effects made little difference either way.
+- **Who:** Mesa (Turnip tile scheduling); renderer authors can batch fewer, larger draws.
+
+### Quad layers honour the texture's alpha
+
+- **Observed:** a menu quad submitted with `XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT` and menu art with partial alpha showed the world through its dark parts (JKXRL's "green screen" menus). SteamVR applies the alpha as the spec says; other runtimes the port was written against evidently did not.
+- **Workaround:** submit the panel opaque.
 
 ### Framebuffer limits
 
@@ -212,6 +246,11 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Workaround:** run the installer on a Windows PC with the same target paths the prefix uses, copy the result into the prefix, then remove it on the PC.
 - **Who:** Wine (reporting x64 emulation capability on ARM64).
 
+### Games that rewrite their own graphics settings turn a mod's stereo off
+
+- **Observed:** Deus Ex: Human Revolution DC writes its graphics registry (`[Software\Eidos\Deus Ex: HRDC\Graphics]`) back to its own values whenever options are saved: `StereoMode 0`, `VSync 1`, `AA 5`. The DeusExHRVR mod then never produces its shared eye pair and its helper process quits after about 20 seconds, so VR stops working silently days after a successful install.
+- **Workaround:** set the mod's values in a launch wrapper on every start ([dx_mode.py](scripts/deus-ex-hr-vr/dx_mode.py)); that wrapper is also where a flat/VR split belongs.
+
 ### Engines that leave a crash flag open a dialog nobody can see
 
 - **Observed:** Unreal 227 leaves `System64\Running.ini` after a crash and opens a "not shut down properly" recovery dialog at the next start, invisible in VR. A launch wrapper that deletes the file first avoids it.
@@ -276,7 +315,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 ## Native ARM64 builds
 
-- `/usr/lib/libopenxr_loader.a` is a 14 KB stub, and `sdl2-config --libs` puts `-L/usr/lib` first, so `-lopenxr_loader` links the stub and every `xr*` symbol is undefined. Link `/opt/steamvr/bin/linuxarm64/libopenxr_loader.so` by full path with an rpath.
+- `/usr/lib/libopenxr_loader.a` is a 14 KB stub, and `sdl2-config --libs` puts `-L/usr/lib` first, so `-lopenxr_loader` links the stub and every `xr*` symbol is undefined. CMake's `find_library` picks the same archive (JKXRL). Link `/opt/steamvr/bin/linuxarm64/libopenxr_loader.so` by full path with an rpath, or pass it as `OPENXR_LOADER_LIBRARY`.
 - The system OpenXR headers are 1.1.40; projects needing newer extensions bring their own.
 - GCC 15 defaults to C23: `true`/`false` are keywords, K&R prototypes and implicit `int` are errors. `-std=gnu99` or `-std=gnu17`, `-fcommon`, `-fpermissive` get old engines compiling.
 - A plain `inline` function used from another translation unit links on MSVC and not on GNU C99 (no external definition); RealRTCW's game module loaded with an undefined symbol and the campaign died on "VM_Create on game failed". Check every module with `ldd -r x.so | grep 'undefined symbol'`.

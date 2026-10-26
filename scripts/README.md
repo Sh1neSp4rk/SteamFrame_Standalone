@@ -14,6 +14,7 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [apply_art.py](common/apply_art.py) | Applies `<id>p.png`, `<id>.png`, `<id>_hero.png`, `<id>_logo.png` as a game's library art without restarting Steam. |
 | [art_inventory.py](common/art_inventory.py) | Lists shortcuts and Steam apps with launch options, and which library art is cached for each. |
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
+| [make_portrait.ps1](common/make_portrait.ps1) | Windows PowerShell: composes a 600x900 portrait from Steam's cached hero and header for games whose cache has no portrait capsule. |
 | [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. Per-game cases set the mod's overrides; the `farcry` case also starts hudbridge. |
 | [flatvr_setup.sh](common/flatvr_setup.sh) | Applies that split to DUSK, Left 4 Dead 2, Portal 2 and Bendy. |
 | [vr_audit2.py](common/vr_audit2.py) | Audits every VR shortcut for how it depends on a Steam game install: path reference, symlink, hard link, or the game's Proton prefix (which Steam deletes on uninstall). |
@@ -111,6 +112,16 @@ The OpenXR API layer for Proton games (per-eye quad layers, single interaction p
 | [cs_controls.py](counter-strike-vr/cs_controls.py), [cs_name.py](counter-strike-vr/cs_name.py) | The Frame binding over the read-only Touch default plus `frame_controls.cfg`; the player name file. |
 | [cs_rebind.sh](counter-strike-vr/cs_rebind.sh), [cs_launch.sh](counter-strike-vr/cs_launch.sh), [cs_state.sh](counter-strike-vr/cs_state.sh) | Regenerate and lock the binding after engine changes; launch with a log summary; status. |
 
+### jedi-knight-vr ([games/jedi-knight-vr](../games/jedi-knight-vr/))
+
+| Script | What it does |
+|---|---|
+| [jk_port.py](jedi-knight-vr/jk_port.py) | **GPL.** Idempotent patches for JKXRL: SteamVR's loader, opaque menu quad, multi-draw indirect off, resolution scale, the Frame actions and the client's layout translation. |
+| [jk_clone.sh](jedi-knight-vr/jk_clone.sh), [jk_sdl3.sh](jedi-knight-vr/jk_sdl3.sh), [jk_build.sh](jedi-knight-vr/jk_build.sh) | Shallow clones, SDL 3 into a private prefix, the CMake/Ninja build of both games. |
+| [jk_setup.sh](jedi-knight-vr/jk_setup.sh) | The two game folders with hard-linked Steam pk3s, `run.sh` with the per-game tiling default, both shortcuts. |
+| [jk_controls.py](jedi-knight-vr/jk_controls.py), [jk_rebind.sh](jedi-knight-vr/jk_rebind.sh) | The Frame bindings over both apps' read-only Touch defaults; regenerate and lock after engine changes. |
+| [jk_launch.sh](jedi-knight-vr/jk_launch.sh), [jk_trial.sh](jedi-knight-vr/jk_trial.sh), [jk_sweep.sh](jedi-knight-vr/jk_sweep.sh), [jk_bisect.sh](jedi-knight-vr/jk_bisect.sh), [jk_heavy.sh](jedi-knight-vr/jk_heavy.sh), [jk_heavy2.sh](jedi-knight-vr/jk_heavy2.sh), [jk_heavy3.sh](jedi-knight-vr/jk_heavy3.sh) | Launch with a log summary; timed runs, resolution sweep, feature bisect and heavy-scene comparisons from the renderer's GPU timing (headset worn). |
+
 ### avp-vr ([games/avp-vr](../games/avp-vr/))
 
 | Script | What it does |
@@ -197,8 +208,10 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [portal2-vr/p2_binding.sh](portal2-vr/p2_binding.sh) | Reuses the L4D2 Frame binding (same action set). |
 | [bendy-vr/install.sh](bendy-vr/install.sh) | Installs BendyVR by hand once the `release-1.5` branch is in place. |
 | [bendy-vr/launch.sh](bendy-vr/launch.sh) | Launches and reports the BepInEx and Unity logs. |
-| [deus-ex-hr-vr/install.sh](deus-ex-hr-vr/install.sh) | Installs DeusExHRVR with the x86-64 runtime DLLs and registry settings, with backups. |
+| [deus-ex-hr-vr/install.sh](deus-ex-hr-vr/install.sh) | Installs DeusExHRVR with the x86-64 runtime DLLs and registry settings, with backups (mod since removed; kept for a retry). |
 | [deus-ex-hr-vr/launch.sh](deus-ex-hr-vr/launch.sh) | Launches with optional Proton/DXVK logging. |
+| [deus-ex-hr-vr/dx_mode.py](deus-ex-hr-vr/dx_mode.py), [dx_flatvr.py](deus-ex-hr-vr/dx_flatvr.py) | The four graphics registry values per mode (the game rewrites them), and the flat/VR split. |
+| [deus-ex-hr-vr/dx_controls.py](deus-ex-hr-vr/dx_controls.py), [dx_scale.sh](deus-ex-hr-vr/dx_scale.sh) | Frame binding with the simple profile locked plus ini button maps; `WorldUnitsPerMetre`. |
 
 ### contractors, halo-mcc, snapshot-vr
 
@@ -206,5 +219,12 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 |---|---|
 | [contractors/contractors](contractors/contractors) | Launch-option wrapper that skips Unreal's prerequisite bootstrapper. |
 | [halo-mcc/repair-mcc-prefix.sh](halo-mcc/repair-mcc-prefix.sh) | Restores Proton's ARM64 runtime DLLs after the EAC installer overwrote them. |
-| [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry. |
+| [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry; sets the layer mode, keeps Proton's log off, passes the tuning files. |
+| [halo-mcc/patches/](halo-mcc/patches/) | MCCVR source patch: Halo 3 shared eye cover (cross-eyed/zoomed fix), weapon-flicker fix, `FRAME_WORLD_SCALE`/`FRAME_STEREO_SCALE`, eye dump and flicker diagnostics. |
+| [halo-mcc/install_build.sh](halo-mcc/install_build.sh) | Installs a Windows-built `HaloMCCVR.dll` and the frame_quadfix layer on the Frame (keeps the 0.5.1 launcher). |
+| [halo-mcc/mcc_controls.sh](halo-mcc/mcc_controls.sh) | Builds and registers the layer in MCC's prefix, writes the Frame binding over SteamVR's generated defaults, sets the essential config. |
+| [halo-mcc/mcc_binding.py](halo-mcc/mcc_binding.py), [mcc_frame_binding.json](halo-mcc/mcc_frame_binding.json) | Frame controller layout, 1:1 with the flat Xbox layout (View and D-pad through the layer's pad bridge). |
+| [halo-mcc/watchbind.sh](halo-mcc/watchbind.sh) | Waits for SteamVR to write Halo's new binding file, then replaces it with the Frame layout and locks it. |
+| [halo-mcc/windows/install-pc.ps1](halo-mcc/windows/install-pc.ps1) | Windows (streaming PC or laptop): installs the built mod, launcher and layer into MCC, writes the layer's `.reg` files for that machine. |
+| [halo-mcc/windows/apply-frame-binding.ps1](halo-mcc/windows/apply-frame-binding.ps1) | Windows: puts the Frame layout into SteamVR's generated Halo binding file and locks it (`-Watch` waits for the first launch). |
 | [snapshot-vr/install-snapshotvr-fovfix.sh](snapshot-vr/install-snapshotvr-fovfix.sh) | Builds and installs an implicit OpenXR API layer that adds `XR_FB_swapchain_update_state` when a game enables `XR_FB_foveation` without it. |
