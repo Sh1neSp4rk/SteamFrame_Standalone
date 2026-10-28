@@ -213,7 +213,7 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [deus-ex-hr-vr/dx_mode.py](deus-ex-hr-vr/dx_mode.py), [dx_flatvr.py](deus-ex-hr-vr/dx_flatvr.py) | The four graphics registry values per mode (the game rewrites them), and the flat/VR split. |
 | [deus-ex-hr-vr/dx_controls.py](deus-ex-hr-vr/dx_controls.py), [dx_scale.sh](deus-ex-hr-vr/dx_scale.sh) | Frame binding with the simple profile locked plus ini button maps; `WorldUnitsPerMetre`. |
 
-### contractors, halo-mcc, snapshot-vr
+### contractors, halo-mcc, re4-remake-vr, snapshot-vr
 
 | Script | What it does |
 |---|---|
@@ -227,4 +227,6 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [halo-mcc/watchbind.sh](halo-mcc/watchbind.sh) | Waits for SteamVR to write Halo's new binding file, then replaces it with the Frame layout and locks it. |
 | [halo-mcc/windows/install-pc.ps1](halo-mcc/windows/install-pc.ps1) | Windows (streaming PC or laptop): installs the built mod, launcher and layer into MCC, writes the layer's `.reg` files for that machine. |
 | [halo-mcc/windows/apply-frame-binding.ps1](halo-mcc/windows/apply-frame-binding.ps1) | Windows: puts the Frame layout into SteamVR's generated Halo binding file and locks it (`-Watch` waits for the first launch). |
+| [re4-remake-vr/re4_frame_xbox.lua](re4-remake-vr/re4_frame_xbox.lua) | REFramework autorun script for RE4VR (Resident Evil 4, 2023): writes the Frame's bumpers, B, right stick click and View into the game's `via.hid.GamePad` as the flat Xbox buttons. Windows PC (streaming). |
+| [re4-remake-vr/windows/install-pc.ps1](re4-remake-vr/windows/install-pc.ps1) | Windows: installs that script, builds the Frame binding from RE4VR's own plus the extra buttons, selects it for `steam.app.2050650` in `steamvr.vrsettings`. |
 | [snapshot-vr/install-snapshotvr-fovfix.sh](snapshot-vr/install-snapshotvr-fovfix.sh) | Builds and installs an implicit OpenXR API layer that adds `XR_FB_swapchain_update_state` when a game enables `XR_FB_foveation` without it. |
