@@ -86,6 +86,7 @@ Failure patterns seen more than once:
 | [Breachers](games/breachers/) | Proton | Dead end | .NET launcher, then EAC integrity check |
 | [Half-Life: VR Mod](games/half-life-vr-mod/) | Proton | Dead end, for now | Skybox assertion on Proton 11; mod VR shutdown on Experimental |
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
+| [Resident Evil 4 (2023) VR](games/re4-remake-vr/) | Streamed from a Windows PC, OpenVR | Working (streamed) | RE4VR; a SteamVR binding plus a REFramework Lua script give the Frame the flat Xbox layout 1:1 |
 | [Titanfall 2 VR](games/titanfall2-vr/) | Streamed only | Not standalone | Needs the mod's installer window on a PC |
 | [Tribes 2 VR](games/tribes2-vr/) | Proton (32-bit) | Dead end | Mod runs; TribesNext login crashes under FEX, 2D shell cannot fuse on the Frame's lenses |
 | [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Removed | Worked at 18 to 36 fps reprojected with eleven inputs; not worth keeping. Lessons recorded |

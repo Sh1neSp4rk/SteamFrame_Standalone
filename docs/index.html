@@ -109,7 +109,7 @@ summary { cursor: pointer; font-weight: 500; }
 <header class="top">
   <h1 class="brand">Frame Standalone Guides</h1>
   <p class="tagline">Why PC games stall when you run them directly on the Steam Frame, the fixes that worked on one headset, and the ports built on it. Pick a game on the left. Every script and patch named here is in the <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">SteamFrame_Standalone</a> repository.</p>
-  <div class="meta"><span>Updated 2026-10-26</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
+  <div class="meta"><span>Updated 2026-10-28</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
 </header>
 
 <div class="layout">
@@ -149,6 +149,8 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#csvr" data-guide="csvr"><span class="dot working"></span>Counter-Strike VR</a>
   <a href="#jkxr" data-guide="jkxr"><span class="dot working"></span>Jedi Academy &amp; Outcast VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
+  <h2>Streamed from a Windows PC</h2>
+  <a href="#re4" data-guide="re4"><span class="dot working"></span>Resident Evil 4 (2023) VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
   <a href="#borderlands" data-guide="borderlands"><span class="dot untested"></span>Borderlands GOTY VR</a>
@@ -1286,6 +1288,64 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 <p>Headset on and SteamVR showing Ready first, then "Launch in VR" from the installer (reachable through the SteamVR dashboard's Desktop view), then wait about 35 seconds. Nothing on the Frame itself is involved.</p>
 </article>
 
+<!-- ===================== RESIDENT EVIL 4 (2023) VR ===================== -->
+<article id="re4" class="guide" data-title="Resident Evil 4 (2023) VR" hidden>
+<header class="g-head">
+  <span class="status working">Working (streamed)</span>
+  <h1>Resident Evil 4 (2023) VR: RE4VR with the flat Xbox layout on the Frame</h1>
+  <p class="lede">Streamed from a Windows PC, not standalone. RE4VR gives the remake first-person motion controls and has a Steam Frame layout of its own, but that layout is the Quest one moved across: no bumpers, B commands Ashley, crouch is on the stick click, and the grips switch menu tabs. A SteamVR binding and a small REFramework script give every Frame button its flat Xbox job while keeping RE4VR's motion controls and its own menu.</p>
+  <dl class="facts">
+    <dt>Steam app</dt><dd>2050650 · 74 GB</dd>
+    <dt>VR mod</dt><dd>RE4VR 2.1.6 by Talemann (re4vr.com), on praydog's REFramework; installer set to OpenVR + Steam</dd>
+    <dt>Route</dt><dd>Windows PC (RTX 4080 Laptop) streaming to the Frame through SteamVR</dd>
+    <dt>Fix</dt><dd>binding (RE4VR's own + 5 buttons on spare actions) + <code>re4_frame_xbox.lua</code></dd>
+    <dt>Confirmed</dt><dd>2026-10-28, in the headset</dd>
+  </dl>
+</header>
+<h2>What you see without the fix</h2>
+<div class="tablewrap"><table>
+<tr><th>Frame button</th><th>RE4VR 2.1.6</th><th>Flat game (Xbox, type A-1)</th></tr>
+<tr><td>B</td><td>Command Ashley (tap) / map (hold)</td><td>Back in menus, crouch</td></tr>
+<tr><td>Right stick click</td><td>Crouch</td><td>R3</td></tr>
+<tr><td>Bumpers</td><td>Nothing</td><td>LB knife / parry, RB run, menu tabs</td></tr>
+<tr><td>View</td><td>Pause (same as Menu)</td><td>Map</td></tr>
+<tr><td>Grips</td><td>Gun draw, knife; LB / RB in menus</td><td>(none on an Xbox pad)</td></tr>
+</table></div>
+<h2>Why the obvious fixes fail</h2>
+<ul>
+<li><strong>XInput is the wrong layer.</strong> RE4VR's <code>xinput1_4.dll</code> is a virtual pad that only imports KERNEL32, rewrites <code>re4.exe</code>'s XInput imports to its internal functions, and exports <code>jmp</code> stubs. RE4 calls it once at startup and then reads the engine's own gamepad, <code>via.hid.GamePad</code>, where RE4VR writes its buttons. An XInput hook fires once and never again.</li>
+<li><strong>RE4VR's VR menu reads its own actions.</strong> Its "back" is the action RE4VR binds to the Frame's B. Rebinding B away from it leaves no way out of the menu (left trigger + Y). So the binding only ever adds to RE4VR's.</li>
+<li><strong>Steam Input</strong> must be off for RE4, or no button reaches the game.</li>
+</ul>
+<h2>The fix</h2>
+<ol>
+<li>Install RE4VR from re4vr.com; pick <strong>OpenVR</strong> (the installer recommends it for the Frame) and <strong>Steam</strong>. Disable Steam Input for RE4 (Properties → Controller).</li>
+<li>Start the game once in VR and quit, so REFramework writes <code>bindings_frame.json</code> into the game folder.</li>
+<li>With RE4 closed: <code>powershell -ExecutionPolicy Bypass -File scripts\re4-remake-vr\windows\install-pc.ps1 -StopSteamVR</code>. It copies <code>re4_frame_xbox.lua</code> into <code>reframework\autorun</code>, writes <code>_framepad\re4_frame_binding.json</code> (RE4VR's binding plus both bumpers on REFramework's spare <code>Block</code> action, right B and left View on <code>Heal</code>, right stick click on <code>MiniMap</code>) and selects it for <code>steam.app.2050650</code> in <code>steamvr.vrsettings</code> (SteamVR closed, since it rewrites that file). Start SteamVR again.</li>
+<li>Optional: a non-Steam shortcut with the OpenVR flag running <code>steam.exe -applaunch 2050650</code>. Not <code>re4.exe</code>: a shortcut gets its own Steam Input setting, which is on.</li>
+</ol>
+<p>Each frame the script reads those actions through REFramework's <code>vrmod</code> API (left and right told apart by hand) and writes the buttons into <code>via.hid.GamePad</code>'s merged, current and last-input devices with <code>set_Button</code>, <code>set_ButtonDown</code> and <code>set_ButtonUp</code>, at five engine stages after RE4VR. B, Cancel, R3 and View come only from the physical buttons; LB and RB are added to RE4VR's, which drives its grip knife through them.</p>
+<h2>Controls: 1:1 with flat</h2>
+<div class="tablewrap"><table>
+<tr><th>Frame</th><th>Game sees</th></tr>
+<tr><td>A / B / X / Y</td><td>A interact / B back, crouch / X reload / Y inventory (left trigger + Y: RE4VR menu)</td></tr>
+<tr><td>Bumpers</td><td>LB knife, parry / RB run; menu tabs</td></tr>
+<tr><td>Triggers, grips, sticks</td><td>RE4VR's motion controls (fire, gun draw and aim, knife; left stick click run, right stick turn; right stick click R3)</td></tr>
+<tr><td>D-pad / View / Menu</td><td>Quick weapons / map / pause</td></tr>
+</table></div>
+<h2>Check it worked</h2>
+<p><code>reframework\data\re4_frame_xbox.log</code> shows <code>loaded</code>, then all five stages in <code>entry hits after 600 frames</code>, then a <code>physical buttons</code> line per press (LB <code>100</code>, RB <code>400</code>, B <code>40080</code>, R3 <code>2000</code>, View <code>4000</code>). SteamVR's <code>vrserver.txt</code> shows the binding file loaded for <code>steam.app.2050650</code>.</p>
+<h2>Caveats</h2>
+<ul>
+<li>Reinstalling or updating RE4VR wipes <code>reframework\</code>: run the installer script again.</li>
+<li>Wrong buttons in RE4VR's menu can leave it in odd states. On this PC one session swapped <code>VR_2DUIScale</code> and <code>VR_2DUIDistance</code> (menus huge and in your face; should be 1 and 15 in <code>re2_fw_config.txt</code>) and switched the REFramework overlay back on.</li>
+<li>"Fatal D3D error (6, E_OUTOFMEMORY)" on the first run was the whole PC out of commit memory (browsers holding about 27 GB). Close them before playing.</li>
+<li>Grips also still switch menu tabs. Not tried standalone on the Frame.</li>
+</ul>
+<p>Full write-up: <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone/tree/main/games/re4-remake-vr">games/re4-remake-vr</a>.</p>
+</article>
+
+
 <!-- ===================== NATIVE ARM64 BUILDS ===================== -->
 <article id="native" class="guide" data-title="Native ARM64 builds" hidden>
 <header class="g-head">
@@ -1431,6 +1491,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>OpenVR game with an action manifest</td><td><code>bindings_frame_controller.json</code> added to the mod's <code>action_manifest.json</code> inside the game folder.</td><td><a href="#l4d2">L4D2 VR</a>, <a href="#portal2">Portal 2 VR</a> (same action set)</td></tr>
 <tr><td>Game with its own VR config</td><td>The mod's binding file plus a SteamVR binding for the grips; sometimes a code patch for actions the mod never exposed.</td><td><a href="#doom3">Doom 3 BFG VR</a> (<code>vr_openvr.cfg</code>, <code>d3_apply_binding.sh</code>)</td></tr>
 <tr><td>Unity mod driving a virtual gamepad</td><td>A SteamVR binding onto the mod's actions, the mod's own mapping file, and a small BepInEx plugin for what neither can express (head-oriented stick, menu button).</td><td><a href="#dusk">DUSK HD VR</a> (<code>dusk_frame_controls.py</code>, <code>FrameVR_DuskHD.dll</code>)</td></tr>
+<tr><td>REFramework mod (RE Engine) that writes the game's gamepad itself</td><td>A <code>steamvrinput</code> binding that keeps every one of the mod's sources and adds the missing buttons on REFramework's spare actions (<code>Block</code>, <code>Heal</code>, <code>MiniMap</code>), plus an autorun Lua script that writes them into <code>via.hid.GamePad</code>. XInput hooks do nothing: the game reads XInput only at startup.</td><td><a href="#re4">Resident Evil 4 (2023) VR</a> (<code>re4_frame_xbox.lua</code>, <code>install-pc.ps1</code>)</td></tr>
 </table></div>
 <div class="note warn"><code>vrcmd --set-settings-string</code> looks like it selects a binding but neither persists nor applies it on the Frame. Write <code>steamvr.vrsettings</code> (<code>~/PCVR/bin/vrsettings_bind.py</code>) and restart the VR session with <code>systemctl --user restart gamescope-session.target</code>, which drops whoever is in the headset, so say so first.</div>
 
@@ -1450,6 +1511,7 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Far Cry VR</td><td>Standard with left bumper jump and left trigger crouch: right trigger fire, right bumper use, A grenades, B reload, X binoculars, menu pause, left stick click sprint, right stick left/right turn, up next weapon + zoom in, down zoom out; grips (80%) grab. Vehicles: left trigger leave, A reload, B change seat, X lights, left stick click change view. Confirmed 2026-10-23.</td></tr>
 <tr><td>Counter-Strike VR</td><td>Standard using every Frame input: right trigger fire, right bumper secondary fire, A use, B reload, X buy menu, Y drop, right grip (80%) last weapon, right stick turn/weapons, right stick click flashlight, menu; left trigger crouch, left bumper jump, left grip (80%) walk, left stick click night vision, view scoreboard, d-pad ammo / ammo / spray / team menu (tap). The engine port adds the bumper, view and d-pad actions. Confirmed 2026-10-23.</td></tr>
 <tr><td>Jedi Academy VR / Jedi Outcast VR</td><td>Standard with JKXR's motion features kept: right trigger fire/saber, right bumper alt-fire (saber on/off), left bumper jump, left trigger crouch, A use, B Force wheel, X saber style, Y console/back, right grip (80%) weapon wheel, left grip (80%) use Force with gestures, right stick turn, right stick click next item, left stick click use item, view datapad, d-pad quick save/load and previous/next Force power, menu. Force moved to the left grip (crouch rule). 2026-10-23.</td></tr>
+<tr><td>Resident Evil 4 (2023) VR (streamed from a PC)</td><td>Not the standard: the flat Xbox layout 1:1 (control type A-1) on top of RE4VR's motion controls. A interact, B back/crouch, X reload, Y inventory, LB knife/parry, RB run, view map, menu pause, right stick click R3, d-pad quick weapons; triggers, grips and sticks as RE4VR. Bumpers, B, R3 and view are written into the game's gamepad by a REFramework script (see its page). Confirmed 2026-10-28.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>
