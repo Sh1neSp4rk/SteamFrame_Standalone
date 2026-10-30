@@ -166,12 +166,14 @@ On a PC the Frame-specific Proton problems (steps 1, 4 and the wrapper) do not e
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\halo-mcc\windows\install-pc.ps1 -ModFiles <stage>\ModFiles -Launcher <stage>\HaloMCCVRLauncher.exe -Layer <folder with frame_quadfix.dll + .json>
    ```
-   It copies everything into `<MCC>\Halo_MCC_VR`, keeps or creates `halomccvr.cfg` with `vr_action_mapping = 0`, and writes `register-frame-layer.reg` / `unregister-frame-layer.reg` with that machine's path.
+   It copies everything into `<MCC>\Halo_MCC_VR`, keeps or creates `halomccvr.cfg` with `vr_action_mapping = 0` and `y_b_start_chord = 0`, and writes `register-frame-layer.reg` / `unregister-frame-layer.reg` with that machine's path.
 4. **Register the layer:** double-click `register-frame-layer.reg` (admin prompt). It has to be the machine-wide `HKEY_LOCAL_MACHINE` key: the mod's launcher runs as administrator and starts MCC elevated, and the OpenXR loader ignores per-user layers in elevated processes.
-5. **Frame binding:** run `powershell -ExecutionPolicy Bypass -File <MCC>\Halo_MCC_VR\apply-frame-binding.ps1 -Watch`, connect the Frame to SteamVR on the PC (Steam Link / SteamVR streaming), and launch the mod once: start `HaloMCCVRLauncher.exe`, pick MCC, Launch. The script overwrites SteamVR's generated `steam.app.976730_oculus_touch_N_binding.json` (in `<Steam>\config\openxr`) with the Frame layout and locks it. The next launch uses it. SteamVR on Windows has the same `frame_controller` driver, so the file is identical to the Frame's.
+5. **Frame binding:** with SteamVR closed, run `powershell -ExecutionPolicy Bypass -File <MCC>\Halo_MCC_VR\apply-frame-binding.ps1 -StopSteamVR`, then start SteamVR again. It selects `mcc_frame_binding.json` for `steam.app.976730` in `steamvr.vrsettings` (`frame_controller_CurrentURL_openxr` and the `_250820_` variant), which SteamVR uses from the next launch. SteamVR on Windows has the same `frame_controller` driver, so the file is identical to the Frame's. **Do not use the Frame's "overwrite the generated file and lock it" trick on Windows:** SteamVR there rewrites `steam.app.976730_oculus_touch_N_binding.json` (in `<Steam>\config\openxr`) on every launch, a read-only file fails with `Unable to write OpenXR binding` and `Loading 0 bindings`, and every button goes dead. The script unlocks such a file if an older version locked it.
 6. **Settings on a PC:** `resolution_scale` can go to 1.0 or higher; on an NVIDIA RTX card the mod's DLSS option works (keep `nvngx_dlss.dll`). Keep `vr_action_mapping = 0` for the 1:1 layout; manual reload and holsters may work on Windows (the freezes were FEX-specific) but were not tested.
+7. **Y + B:** `install-pc.ps1` sets `y_b_start_chord = 0` in `halomccvr.cfg`. With the mod's default (1), pressing Y and B together also pauses, which gets in the way of a 1:1 layout where Y and B are separate game buttons.
+8. **Library entry (optional):** a non-Steam shortcut "Halo MCC (VR)" to `<MCC>\Halo_MCC_VR\HaloMCCVRLauncher.exe` with "Include in VR Library" ticked. MCC artwork from Steam's library cache can go in `userdata\<id>\config\grid` under the shortcut's id.
 
-The Steam "Anti-Cheat Disabled" entry does not inject the mod on Windows; always start through `HaloMCCVRLauncher.exe`.
+The Steam "Anti-Cheat Disabled" entry does not inject the mod on Windows; always start through `HaloMCCVRLauncher.exe`. Confirmed in the headset with the Frame controls on a Windows PC (RTX 4080 Laptop) streaming to the Frame.
 
 ## Tuning and diagnostics (patched build)
 
@@ -206,7 +208,7 @@ ssh frame 'rm ~/mcc; cd ~/.local/share/Steam/steamapps/common/"Halo The Master C
 # then clear the Launch Options field. The layer's registry value lives in compatdata/976730/pfx/system.reg.
 ```
 
-On Windows: double-click `unregister-frame-layer.reg`, then delete `<MCC>\Halo_MCC_VR`.
+On Windows: double-click `unregister-frame-layer.reg`, delete `<MCC>\Halo_MCC_VR`, and remove the two `frame_controller_*` keys under `steam.app.976730` in `steamvr.vrsettings` with SteamVR closed (or restore `steamvr.vrsettings.bak-halo-frame`).
 
 ## Files in this repo
 
@@ -216,7 +218,7 @@ On Windows: double-click `unregister-frame-layer.reg`, then delete `<MCC>\Halo_M
 - [install_build.sh](../../scripts/halo-mcc/install_build.sh): installs a built DLL and the layer on the Frame.
 - [mcc_controls.sh](../../scripts/halo-mcc/mcc_controls.sh): builds and registers the layer in the prefix, writes the binding, sets the essential config.
 - [mcc_binding.py](../../scripts/halo-mcc/mcc_binding.py) / [mcc_frame_binding.json](../../scripts/halo-mcc/mcc_frame_binding.json) / [watchbind.sh](../../scripts/halo-mcc/watchbind.sh): the Frame controller layout and the routine that gets SteamVR to use it.
-- [windows/install-pc.ps1](../../scripts/halo-mcc/windows/install-pc.ps1) / [windows/apply-frame-binding.ps1](../../scripts/halo-mcc/windows/apply-frame-binding.ps1): the same for a Windows PC streaming to the Frame.
+- [windows/install-pc.ps1](../../scripts/halo-mcc/windows/install-pc.ps1) / [windows/apply-frame-binding.ps1](../../scripts/halo-mcc/windows/apply-frame-binding.ps1): the same for a Windows PC streaming to the Frame (the binding is selected in `steamvr.vrsettings`, not locked into SteamVR's generated file).
 - [tools/frame-quadfix/halo](../../tools/frame-quadfix/halo/): the Halo build of the OpenXR layer.
 
 ## Credits

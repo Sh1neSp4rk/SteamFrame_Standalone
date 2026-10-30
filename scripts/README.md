@@ -11,6 +11,7 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [steam_shortcuts.py](common/steam_shortcuts.py) | Adds, lists, removes and stops non-Steam shortcuts through the Steam client's CEF debug port (127.0.0.1:8080 on the headset), with the VR flag and a "PC VR ports" collection; `gameid` converts an appid to the id `steam://rungameid/` wants. Adapted from Frame Control (MIT). |
 | [steam_eval.py](common/steam_eval.py) | Runs one JavaScript expression in the Steam client (launch options, compat tools, beta branches, artwork, starting and stopping games). |
 | [vrsettings_bind.py](common/vrsettings_bind.py) | Selects a SteamVR controller binding for an app by writing `steamvr.vrsettings` (legacy, OpenXR or SteamVR Input). `vrcmd --set-settings-string` does not persist on the Frame. Restart the VR session afterwards. |
+| [vrsettings_bind.ps1](common/vrsettings_bind.ps1) | Windows (streaming PC): the same, writing Steam's own `config\steamvr.vrsettings` with SteamVR closed (`-StopSteamVR` closes it). |
 | [apply_art.py](common/apply_art.py) | Applies `<id>p.png`, `<id>.png`, `<id>_hero.png`, `<id>_logo.png` as a game's library art without restarting Steam. |
 | [art_inventory.py](common/art_inventory.py) | Lists shortcuts and Steam apps with launch options, and which library art is cached for each. |
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
@@ -213,7 +214,7 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [deus-ex-hr-vr/dx_mode.py](deus-ex-hr-vr/dx_mode.py), [dx_flatvr.py](deus-ex-hr-vr/dx_flatvr.py) | The four graphics registry values per mode (the game rewrites them), and the flat/VR split. |
 | [deus-ex-hr-vr/dx_controls.py](deus-ex-hr-vr/dx_controls.py), [dx_scale.sh](deus-ex-hr-vr/dx_scale.sh) | Frame binding with the simple profile locked plus ini button maps; `WorldUnitsPerMetre`. |
 
-### contractors, halo-mcc, re4-remake-vr, snapshot-vr
+### contractors, doom-2016-kharvox, halo-mcc, mhrise-vr, re4-remake-vr, snapshot-vr
 
 | Script | What it does |
 |---|---|
@@ -226,7 +227,14 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [halo-mcc/mcc_binding.py](halo-mcc/mcc_binding.py), [mcc_frame_binding.json](halo-mcc/mcc_frame_binding.json) | Frame controller layout, 1:1 with the flat Xbox layout (View and D-pad through the layer's pad bridge). |
 | [halo-mcc/watchbind.sh](halo-mcc/watchbind.sh) | Waits for SteamVR to write Halo's new binding file, then replaces it with the Frame layout and locks it. |
 | [halo-mcc/windows/install-pc.ps1](halo-mcc/windows/install-pc.ps1) | Windows (streaming PC or laptop): installs the built mod, launcher and layer into MCC, writes the layer's `.reg` files for that machine. |
-| [halo-mcc/windows/apply-frame-binding.ps1](halo-mcc/windows/apply-frame-binding.ps1) | Windows: puts the Frame layout into SteamVR's generated Halo binding file and locks it (`-Watch` waits for the first launch). |
+| [halo-mcc/windows/apply-frame-binding.ps1](halo-mcc/windows/apply-frame-binding.ps1) | Windows: selects the Frame layout for Halo in `steamvr.vrsettings` (SteamVR on Windows rewrites its generated binding file every launch, so locking it kills input) and unlocks a file an older version locked. |
+| [doom-2016-kharvox/doompad.c](doom-2016-kharvox/doompad.c), [build.sh](doom-2016-kharvox/build.sh), [frame_doompad.json](doom-2016-kharvox/frame_doompad.json) | frame_doompad: an x86-64 Windows OpenXR API layer for KHARVOX (DOOM 2016 VR) that adds the Xbox buttons KHARVOX has no actions for and ORs them into DOOM's XInput; built with clang + lld-link on Linux, no Windows SDK. |
+| [doom-2016-kharvox/kharvox_binding.py](doom-2016-kharvox/kharvox_binding.py), [kharvox_frame_binding.json](doom-2016-kharvox/kharvox_frame_binding.json) | The Frame binding: KHARVOX's motion actions plus the layer's `framepad` set, 1:1 with flat DOOM's gamepad. |
+| [doom-2016-kharvox/register-frame-doompad.reg](doom-2016-kharvox/register-frame-doompad.reg), [unregister-frame-doompad.reg](doom-2016-kharvox/unregister-frame-doompad.reg) | Per-user layer registration for `C:\KHARVOX\frame-doompad`. |
+| [doom-2016-kharvox/windows/Start-Kharvox.ps1](doom-2016-kharvox/windows/Start-Kharvox.ps1), [Add-KharvoxSteamShortcut.ps1](doom-2016-kharvox/windows/Add-KharvoxSteamShortcut.ps1) | Starts the KHARVOX launcher with DOOM's path fixed up from any drive, and adds a "DOOM (KHARVOX VR)" VR library entry by editing `shortcuts.vdf` with Steam closed. |
+| [mhrise-vr/mhrise_framepad.c](mhrise-vr/mhrise_framepad.c) | REFramework plugin for Monster Hunter Rise VR: hooks XInput and reports the Frame controllers (REFramework's OpenVR actions) as an Xbox pad. MinGW gcc + MinHook. |
+| [mhrise-vr/mhrise_frame_binding.json](mhrise-vr/mhrise_frame_binding.json) | Its Frame binding (bumpers, X/Y, Menu/View on spare REFramework actions). |
+| [mhrise-vr/Launch-MHRiseVR.ps1](mhrise-vr/Launch-MHRiseVR.ps1) | Puts `openvr_api.dll` beside the exe for one launch and removes it after, so only the VR entry starts VR. |
 | [re4-remake-vr/re4_frame_xbox.lua](re4-remake-vr/re4_frame_xbox.lua) | REFramework autorun script for RE4VR (Resident Evil 4, 2023): writes the Frame's bumpers, B, right stick click and View into the game's `via.hid.GamePad` as the flat Xbox buttons. Windows PC (streaming). |
 | [re4-remake-vr/windows/install-pc.ps1](re4-remake-vr/windows/install-pc.ps1) | Windows: installs that script, builds the Frame binding from RE4VR's own plus the extra buttons, selects it for `steam.app.2050650` in `steamvr.vrsettings`. |
 | [snapshot-vr/install-snapshotvr-fovfix.sh](snapshot-vr/install-snapshotvr-fovfix.sh) | Builds and installs an implicit OpenXR API layer that adds `XR_FB_swapchain_update_state` when a game enables `XR_FB_foveation` without it. |
