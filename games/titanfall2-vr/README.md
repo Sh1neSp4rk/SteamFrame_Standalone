@@ -1,6 +1,6 @@
 # Titanfall 2 VR
 
-**Status:** Not standalone — this never ran on the headset; it is a PC VR mod streamed to the Frame, and it only starts correctly from the mod's own installer window on the PC.
+**Status:** Not standalone, working streamed. It never ran on the headset itself; as PC VR streamed from a Windows PC to the Frame it works, with the mod's own controls, when started from the mod's installer window (see *Streaming from a Windows PC*). Confirmed in the headset.
 
 | | |
 |---|---|
@@ -43,6 +43,15 @@ VRInitError_Driver_WirelessHmdNotConnected
 
 - Nothing on the Frame. This is PC VR streaming, not a standalone title.
 - What works on the PC: headset on and SteamVR showing Ready first, then "Launch in VR" from the installer (reachable through the SteamVR dashboard's Desktop view), then wait about 35 seconds.
+
+## Streaming from a Windows PC
+
+1. Install the mod with CircuitLord's installer (`CircuitLordVRModInstaller.exe`, kept in the Titanfall 2 folder). It sets up Northstar in the `TF2VR` profile folder.
+2. **Library entry:** a non-Steam shortcut to `<Titanfall2>\CircuitLordVRModInstaller.exe` (start in the Titanfall 2 folder) with "Include in VR Library" ticked, so it can be started from the headset. The shortcut on the test PC also passes `-profile=TF2VR`. Do not point a shortcut at `Titanfall2VRLauncher.exe`: without the installer's environment and arguments the game runs flat or fails to load Northstar (see above).
+3. Put the headset on and wait for SteamVR to show Ready, start the shortcut, open the SteamVR dashboard's Desktop view, click **Launch in VR** in the installer window and wait about 35 seconds.
+4. Keep the headset on: if it goes to standby, SteamVR's wireless link times out after about 30 seconds and the session ends.
+
+The Frame controllers work with the mod's own bindings; nothing was changed for them.
 
 ## State left on the headset
 

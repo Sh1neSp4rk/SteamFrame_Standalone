@@ -109,7 +109,7 @@ summary { cursor: pointer; font-weight: 500; }
 <header class="top">
   <h1 class="brand">Frame Standalone Guides</h1>
   <p class="tagline">Why PC games stall when you run them directly on the Steam Frame, the fixes that worked on one headset, and the ports built on it. Pick a game on the left. Every script and patch named here is in the <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">SteamFrame_Standalone</a> repository.</p>
-  <div class="meta"><span>Updated 2026-10-28</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
+  <div class="meta"><span>Updated 2026-10-30</span><span>SteamOS 0.4.5 · SteamVR 2.18.2</span><span>Proton 11.0 (ARM64) · Proton Experimental (ARM64) · native ARM64 ports</span><span>Headset name: frame.local</span><span><a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone">Scripts, patches and per-game notes on GitHub</a></span></div>
 </header>
 
 <div class="layout">
@@ -150,7 +150,11 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#jkxr" data-guide="jkxr"><span class="dot working"></span>Jedi Academy &amp; Outcast VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Streamed from a Windows PC</h2>
+  <a href="#doom2016" data-guide="doom2016"><span class="dot working"></span>DOOM (2016) VR: KHARVOX</a>
+  <a href="#halo" data-guide="halo"><span class="dot working"></span>Halo: MCC VR (Windows PC)</a>
+  <a href="#mhrise" data-guide="mhrise"><span class="dot working"></span>Monster Hunter Rise VR</a>
   <a href="#re4" data-guide="re4"><span class="dot working"></span>Resident Evil 4 (2023) VR</a>
+  <a href="#titanfall" data-guide="titanfall"><span class="dot working"></span>Titanfall 2 VR</a>
   <h2>Parked</h2>
   <a href="#bioshock" data-guide="bioshock"><span class="dot untested"></span>BioShock Remastered VR</a>
   <a href="#borderlands" data-guide="borderlands"><span class="dot untested"></span>Borderlands GOTY VR</a>
@@ -159,7 +163,6 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#breachers" data-guide="breachers"><span class="dot dead"></span>Breachers</a>
   <a href="#hlvr" data-guide="hlvr"><span class="dot dead"></span>Half-Life: VR Mod (HL1)</a>
   <a href="#uevr" data-guide="uevr"><span class="dot dead"></span>UEVR injector</a>
-  <a href="#titanfall" data-guide="titanfall"><span class="dot dead"></span>Titanfall 2 VR</a>
   <a href="#tribes2" data-guide="tribes2"><span class="dot dead"></span>Tribes 2 VR</a>
 </nav>
 
@@ -402,7 +405,7 @@ ssh frame "grep -c 'Created remote Vulkan image' ~/.local/share/Steam/logs/vrcli
 <header class="g-head">
   <span class="status working">Working</span>
   <h1>Halo: The Master Chief Collection, flat and with the VR mod</h1>
-  <p class="lede">Two separate problems: Steam's install script wrecked the Proton prefix, and the VR mod's hooks cannot patch ARM64 code. Both were fixed without touching SteamOS, and the two Steam launch entries now mean flat and VR. A rebuilt mod then fixed Halo 3's stereo, the weapon flicker and the in-game menu (see <em>Making the VR mod play well</em>); the same build streams from a Windows PC with the Frame's controls.</p>
+  <p class="lede">Two separate problems: Steam's install script wrecked the Proton prefix, and the VR mod's hooks cannot patch ARM64 code. Both were fixed without touching SteamOS, and the two Steam launch entries now mean flat and VR. A rebuilt mod then fixed Halo 3's stereo, the weapon flicker and the in-game menu (see <em>Making the VR mod play well</em>); the same build streams from a Windows PC with the Frame's controls (confirmed; on Windows the binding is selected in <code>steamvr.vrsettings</code> with <code>apply-frame-binding.ps1</code>, never locked into SteamVR's generated file, which SteamVR there rewrites every launch: a read-only one loads no bindings and every button goes dead; see the repo's halo-mcc page).</p>
   <dl class="facts">
     <dt>Steam app</dt><dd>976730 · 97 GB</dd>
     <dt>Compat tool</dt><dd>Proton Experimental (ARM64), Steam's default for this app</dd>
@@ -1275,7 +1278,7 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 
 <article id="titanfall" class="guide" data-title="Titanfall 2 VR" hidden>
 <header class="g-head">
-  <span class="status dead">Not standalone</span>
+  <span class="status working">Working (streamed)</span>
   <h1>Titanfall 2 VR</h1>
   <p class="lede">This one never ran on the headset. It is a PC VR mod streamed to the Frame, and it only starts correctly from the mod's own installer window on the PC. Listed here because it shares the symptom "launching from Steam does nothing".</p>
 </header>
@@ -1286,6 +1289,96 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 </ul>
 <h2>What works</h2>
 <p>Headset on and SteamVR showing Ready first, then "Launch in VR" from the installer (reachable through the SteamVR dashboard's Desktop view), then wait about 35 seconds. Nothing on the Frame itself is involved.</p>
+<h2>Streaming from a Windows PC (confirmed)</h2>
+<ol>
+<li>Install the mod with CircuitLord's installer (<code>CircuitLordVRModInstaller.exe</code>, kept in the Titanfall 2 folder).</li>
+<li>Library entry: a non-Steam shortcut to <code>&lt;Titanfall2&gt;\CircuitLordVRModInstaller.exe</code> (start in the Titanfall 2 folder) with "Include in VR Library" ticked; the test PC's also passes <code>-profile=TF2VR</code>. Not <code>Titanfall2VRLauncher.exe</code>, which runs flat or fails to load Northstar without the installer's environment.</li>
+<li>Headset on, SteamVR Ready, start the shortcut, click <strong>Launch in VR</strong> through the dashboard's Desktop view, wait about 35 seconds. Keep the headset on: standby ends the session after about 30 seconds.</li>
+</ol>
+<p>The Frame controllers work with the mod's own bindings; nothing was changed for them.</p>
+</article>
+
+<!-- ===================== DOOM (2016) VR: KHARVOX ===================== -->
+<article id="doom2016" class="guide" data-title="DOOM (2016) VR: KHARVOX" hidden>
+<header class="g-head">
+  <span class="status working">Working (streamed)</span>
+  <h1>DOOM (2016) VR: KHARVOX with the flat Xbox layout on the Frame</h1>
+  <p class="lede">Streamed from a Windows PC, not standalone. KHARVOX turns DOOM into a room-scale motion-controlled game but has only 12 actions, built around Quest gestures, so most of the Frame's buttons had nothing to bind to. A small OpenXR API layer adds the missing buttons and feeds them to DOOM's own gamepad input, so every Frame button does what the same Xbox button does in flat DOOM.</p>
+  <dl class="facts">
+    <dt>Steam app</dt><dd>379720</dd>
+    <dt>VR mod</dt><dd>KHARVOX 1.11 by CactusVR Studios (github.com/CactusVRStudios/KHARVOX), Vulkan layer + OpenXR</dd>
+    <dt>Route</dt><dd>Windows PC (RTX 4080 Laptop) streaming to the Frame through SteamVR</dd>
+    <dt>Fix</dt><dd><code>frame_doompad.dll</code> OpenXR layer + <code>kharvox_frame_binding.json</code></dd>
+    <dt>Confirmed</dt><dd>in the headset</dd>
+  </dl>
+</header>
+<h2>Why the buttons did nothing</h2>
+<p>KHARVOX hands DOOM a virtual Xbox pad through an <code>XInputGetState</code> import hook in <code>DOOMx64vk.exe</code>, fed from its OpenXR actions. LT, LB, RB, X, Y, L3, View, Menu and the D-pad have no action: KHARVOX reaches them through gestures and stick directions. SteamVR can only bind a Frame button to an action the game declared, so those buttons stayed dead.</p>
+<h2>The frame_doompad layer</h2>
+<ul>
+<li>Adds an action set <code>framepad</code> with every missing Xbox button and ORs them into what DOOM's XInput import returns each frame, wrapped around KHARVOX's own hook (KHARVOX patches the slot once, before it creates its OpenXR instance).</li>
+<li>Holding RB opens DOOM's weapon wheel: the right stick then drives the wheel and KHARVOX's turn is held centered.</li>
+<li>KHARVOX's turn-stick vertical axis reads 0 (it would rev the chainsaw); <code>FRAMEXR_DOOM_STICK_Y=1</code> keeps it.</li>
+<li>D-pad right also sends the Z key: the KHARVOX launcher rebinds that D-pad channel to Use on every launch, and Z is the campaign's equipment cycle.</li>
+<li>A is a plain Xbox A; B drives KHARVOX's crouch (its camera follows) plus a plain Xbox B, and the layer drops the menu A KHARVOX derives from crouch. Keep the launcher's "Swap Jump/Crouch" off.</li>
+<li>Only the Touch interaction profile is forwarded, active only in <code>DOOMx64vk.exe</code>/<code>DOOMx64.exe</code>; <code>DISABLE_FRAME_DOOMPAD=1</code> turns it off. Built freestanding with clang + lld-link on Linux (<code>build.sh</code>), no Windows SDK.</li>
+</ul>
+<h2>Steps</h2>
+<ol>
+<li>Extract KHARVOX to its own folder (here <code>C:\KHARVOX</code>) and run <code>KharvoxLauncher.exe</code> once.</li>
+<li>Build the layer with <code>scripts/doom-2016-kharvox/build.sh</code> on the Frame or a Linux box; copy <code>frame_doompad.dll</code>, <code>frame_doompad.json</code> and <code>kharvox_frame_binding.json</code> to <code>C:\KHARVOX\frame-doompad\</code>.</li>
+<li>Double-click <code>register-frame-doompad.reg</code> (per-user implicit layer; edit the path if KHARVOX lives elsewhere).</li>
+<li>With SteamVR closed: <code>powershell -ExecutionPolicy Bypass -File scripts\common\vrsettings_bind.ps1 -App steam.app.379720 -Kind openxr -Binding C:\KHARVOX\frame-doompad\kharvox_frame_binding.json -StopSteamVR</code>, then start SteamVR.</li>
+<li>Optional library entry: <code>Add-KharvoxSteamShortcut.ps1</code> adds "DOOM (KHARVOX VR)" (VR flag, no drive letter); <code>Start-Kharvox.ps1</code> fixes the launcher's saved DOOM path and starts it.</li>
+</ol>
+<h2>Controls: 1:1 with flat</h2>
+<div class="tablewrap"><table>
+<tr><th>Frame</th><th>Game sees</th></tr>
+<tr><td>Triggers</td><td>RT fire / LT weapon mod</td></tr>
+<tr><td>Bumpers</td><td>LB equipment / RB change weapon (hold: wheel on the right stick)</td></tr>
+<tr><td>A / B / X / Y</td><td>jump, confirm / crouch, back / chainsaw / BFG</td></tr>
+<tr><td>Sticks</td><td>move, L3 / turn, R3 melee and use</td></tr>
+<tr><td>View / Menu / D-pad</td><td>dossier / pause / up weapon mod, down objectives, left-right equipment</td></tr>
+<tr><td>Grips (80%)</td><td>KHARVOX: two-hand support, equipment, BFG (left); weapon mod, shoulder weapon (right)</td></tr>
+</table></div>
+<h2>Check it worked</h2>
+<p><code>frame_doompad.log</code> in DOOM's folder shows <code>frame_doompad active in DOOMx64vk.exe</code>, a <code>buttons 0x....</code> line per press and <code>RB held: right stick -&gt; DOOM weapon wheel</code>.</p>
+<p>Full write-up: <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone/tree/main/games/doom-2016-kharvox">games/doom-2016-kharvox</a>.</p>
+</article>
+
+<!-- ===================== MONSTER HUNTER RISE VR ===================== -->
+<article id="mhrise" class="guide" data-title="Monster Hunter Rise VR" hidden>
+<header class="g-head">
+  <span class="status working">Working (streamed)</span>
+  <h1>Monster Hunter Rise VR: REFramework VR with the Frame as an Xbox pad</h1>
+  <p class="lede">Streamed from a Windows PC, not standalone. REFramework's VR mode puts Rise in the headset in third person, but for this game it does not pass the VR controllers to the game at all: the picture worked and no button did anything. A small REFramework plugin makes the Frame controllers a 1:1 Xbox pad, and a launcher turns VR on only for the VR library entry.</p>
+  <dl class="facts">
+    <dt>Steam app</dt><dd>1446780 · build 17920865</dd>
+    <dt>VR mod</dt><dd>praydog's REFramework nightly-01433 (<code>dinput8.dll</code> + <code>openvr_api.dll</code> from VR.zip), OpenVR</dd>
+    <dt>Route</dt><dd>Windows PC (RTX 4080 Laptop) streaming to the Frame through SteamVR</dd>
+    <dt>Fix</dt><dd><code>mhrise_framepad.dll</code> + <code>mhrise_frame_binding.json</code> + <code>Launch-MHRiseVR.ps1</code></dd>
+    <dt>Confirmed</dt><dd>2026-10-28 onwards, in the headset</dd>
+  </dl>
+</header>
+<h2>What did not work</h2>
+<p>A Lua script that ORed buttons into Rise's own pad object (<code>snow.Pad.Device</code>) gave the wrong buttons and a dead left stick: one of its button words is already remapped through the key config, and another is rebuilt from the layer below every update.</p>
+<h2>The fix</h2>
+<ul>
+<li><strong>Plugin:</strong> <code>reframework\plugins\mhrise_framepad.dll</code> inline-hooks <code>XInputGetState</code>, its ordinal-100 twin and <code>XInputGetCapabilities</code> (MinHook; the packed exe resolves XInput at runtime). While <code>openvr_api.dll</code> is loaded it reports XInput user 0 as an Xbox pad built from REFramework's own OpenVR actions, read in-process through <code>IVRInput_010</code>, merging a real pad if one is connected. Flat launches pass through untouched.</li>
+<li><strong>Binding:</strong> REFramework has no bumper or X/Y actions, so spare ones carry them: X and Y on <code>Block</code>/<code>Heal</code>, bumpers on <code>RE2_Quickturn</code> (hand = LB or RB), Menu and View on <code>SystemButton</code> (right Start, left Back). Selected for <code>steam.app.1446780</code> as <code>steamvrinput</code> in <code>steamvr.vrsettings</code>, because REFramework rewrites its default bindings every launch.</li>
+<li><strong>VR only on request:</strong> <code>openvr_api.dll</code> lives in <code>_vr\</code>. <code>Launch-MHRiseVR.ps1</code> copies it beside the exe, runs <code>steam.exe -applaunch 1446780</code>, waits for the game to exit and removes it again, so the normal entry stays flat. A non-Steam shortcut "Monster Hunter Rise (VR)" runs that script with PowerShell, VR library ticked.</li>
+</ul>
+<h2>Controls: 1:1 with flat</h2>
+<div class="tablewrap"><table>
+<tr><th>Frame</th><th>Game sees</th></tr>
+<tr><td>A / B / X / Y, bumpers</td><td>A / B / X / Y, LB / RB</td></tr>
+<tr><td>Triggers, sticks, clicks, D-pad</td><td>LT / RT (analog), sticks, L3 / R3, D-pad</td></tr>
+<tr><td>Menu / View</td><td>Start / Back</td></tr>
+<tr><td>Grips</td><td>not sent</td></tr>
+</table></div>
+<h2>Check it worked</h2>
+<p><code>reframework\data\mhrise_framepad.log</code>: three <code>hook ...: MH_OK</code> lines, then <code>OpenVR input ready</code>. <code>_vr\launcher.log</code> ends each session with <code>cleanup done (dll present: False)</code>. If presses register twice, turn Steam Input off for Rise.</p>
+<p>Full write-up: <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone/tree/main/games/mhrise-vr">games/mhrise-vr</a>.</p>
 </article>
 
 <!-- ===================== RESIDENT EVIL 4 (2023) VR ===================== -->
@@ -1492,7 +1585,10 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Game with its own VR config</td><td>The mod's binding file plus a SteamVR binding for the grips; sometimes a code patch for actions the mod never exposed.</td><td><a href="#doom3">Doom 3 BFG VR</a> (<code>vr_openvr.cfg</code>, <code>d3_apply_binding.sh</code>)</td></tr>
 <tr><td>Unity mod driving a virtual gamepad</td><td>A SteamVR binding onto the mod's actions, the mod's own mapping file, and a small BepInEx plugin for what neither can express (head-oriented stick, menu button).</td><td><a href="#dusk">DUSK HD VR</a> (<code>dusk_frame_controls.py</code>, <code>FrameVR_DuskHD.dll</code>)</td></tr>
 <tr><td>REFramework mod (RE Engine) that writes the game's gamepad itself</td><td>A <code>steamvrinput</code> binding that keeps every one of the mod's sources and adds the missing buttons on REFramework's spare actions (<code>Block</code>, <code>Heal</code>, <code>MiniMap</code>), plus an autorun Lua script that writes them into <code>via.hid.GamePad</code>. XInput hooks do nothing: the game reads XInput only at startup.</td><td><a href="#re4">Resident Evil 4 (2023) VR</a> (<code>re4_frame_xbox.lua</code>, <code>install-pc.ps1</code>)</td></tr>
+<tr><td>REFramework VR with no controller input for the game (third-person RE Engine games)</td><td>A <code>steamvrinput</code> binding onto REFramework's actions (spare ones for the buttons it lacks) plus a plugin that hooks XInput and reports them as a connected Xbox pad. Writing into the game's own pad object went wrong here (key-config-mapped and rebuilt layers).</td><td><a href="#mhrise">Monster Hunter Rise VR</a> (<code>mhrise_framepad.dll</code>)</td></tr>
+<tr><td>OpenXR mod with too few actions, driving the game through its own XInput hook</td><td>An implicit OpenXR API layer that adds an action set with the missing buttons and ORs them into the game's XInput import, wrapped outside the mod's hook; a Frame binding for both action sets, selected in <code>steamvr.vrsettings</code>.</td><td><a href="#doom2016">DOOM (2016) VR: KHARVOX</a> (<code>frame_doompad.dll</code>)</td></tr>
 </table></div>
+<div class="note">On a Windows PC streaming to the Frame the same rule holds: select a binding in Steam's <code>config\steamvr.vrsettings</code> with SteamVR closed (<code>scripts\common\vrsettings_bind.ps1</code>). Do not overwrite SteamVR's generated binding in <code>config\openxr</code> and make it read-only: SteamVR on Windows rewrites it every launch, and a read-only file means no bindings at all.</div>
 <div class="note warn"><code>vrcmd --set-settings-string</code> looks like it selects a binding but neither persists nor applies it on the Frame. Write <code>steamvr.vrsettings</code> (<code>~/PCVR/bin/vrsettings_bind.py</code>) and restart the VR session with <code>systemctl --user restart gamescope-session.target</code>, which drops whoever is in the headset, so say so first.</div>
 
 <h2>Where each game stands</h2>
@@ -1512,6 +1608,9 @@ exec stdbuf -oL -eL ./game "$@" &gt; game-last.log 2&gt;&amp;1    # line-buffere
 <tr><td>Counter-Strike VR</td><td>Standard using every Frame input: right trigger fire, right bumper secondary fire, A use, B reload, X buy menu, Y drop, right grip (80%) last weapon, right stick turn/weapons, right stick click flashlight, menu; left trigger crouch, left bumper jump, left grip (80%) walk, left stick click night vision, view scoreboard, d-pad ammo / ammo / spray / team menu (tap). The engine port adds the bumper, view and d-pad actions. Confirmed 2026-10-23.</td></tr>
 <tr><td>Jedi Academy VR / Jedi Outcast VR</td><td>Standard with JKXR's motion features kept: right trigger fire/saber, right bumper alt-fire (saber on/off), left bumper jump, left trigger crouch, A use, B Force wheel, X saber style, Y console/back, right grip (80%) weapon wheel, left grip (80%) use Force with gestures, right stick turn, right stick click next item, left stick click use item, view datapad, d-pad quick save/load and previous/next Force power, menu. Force moved to the left grip (crouch rule). 2026-10-23.</td></tr>
 <tr><td>Resident Evil 4 (2023) VR (streamed from a PC)</td><td>Not the standard: the flat Xbox layout 1:1 (control type A-1) on top of RE4VR's motion controls. A interact, B back/crouch, X reload, Y inventory, LB knife/parry, RB run, view map, menu pause, right stick click R3, d-pad quick weapons; triggers, grips and sticks as RE4VR. Bumpers, B, R3 and view are written into the game's gamepad by a REFramework script (see its page). Confirmed 2026-10-28.</td></tr>
+<tr><td>DOOM (2016) VR: KHARVOX (streamed from a PC)</td><td>Not the standard: flat DOOM's Xbox layout 1:1 on top of KHARVOX's motion controls. RT fire, LT weapon mod, LB equipment, RB change weapon (hold: wheel on the right stick), A jump, B crouch/back, X chainsaw, Y BFG, right stick click melee/use, view dossier, menu pause, d-pad as flat; right stick turns, grips (80%) two-hand support and shoulder weapon. The buttons KHARVOX has no actions for come from the frame_doompad OpenXR layer (see its page). Confirmed.</td></tr>
+<tr><td>Monster Hunter Rise VR (streamed from a PC)</td><td>Not the standard: a plain Xbox pad, 1:1 (no motion controls in REFramework's Rise VR). A/B/X/Y, bumpers, analog triggers, sticks and clicks, d-pad, menu Start, view Back; grips unused. Through the mhrise_framepad XInput plugin. Confirmed.</td></tr>
+<tr><td>Titanfall 2 VR (streamed from a PC)</td><td>The mod's own bindings, unchanged. Confirmed.</td></tr>
 <tr><td>Doom 3 BFG VR</td><td>Layout v2: grips unused; L bumper jump, R bumper PDA, A crouch, B reload; left d-pad = main menu (predates the menu-button rule); right stick click recenter, up/down weapons.</td></tr>
 <tr><td>DUSK HD VR</td><td>Left stick click = walk; left grip (80%) = last weapon / weapon wheel; right stick up/down unused (it drives the wheel).</td></tr>
 <tr><td>L4D2 VR</td><td>Right stick click = show HUD; left stick click = recenter (mod default); X = flashlight.</td></tr>

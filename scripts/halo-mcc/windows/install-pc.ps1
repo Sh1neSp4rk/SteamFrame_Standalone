@@ -9,7 +9,8 @@
 #   -McCRoot   optional; found from Steam's library folders when omitted
 #
 # What it does: copies everything into <MCC>\Halo_MCC_VR, writes a minimal halomccvr.cfg if there is none
-# (vr_action_mapping = 0 so the buttons stay 1:1 with flat), copies the Frame controller layout and the
+# (vr_action_mapping = 0 so the buttons stay 1:1 with flat, y_b_start_chord = 0 so Y+B is not
+# also a pause chord), copies the Frame controller layout and the
 # apply-frame-binding.ps1 helper next to it, and writes register-frame-layer.reg / unregister-frame-layer.reg with
 # this machine's path. Registering the layer needs administrator rights, so that one step is yours: double-click
 # register-frame-layer.reg. Nothing outside the MCC folder is changed by this script.
@@ -45,15 +46,17 @@ Copy-Item -Force (Join-Path $PSScriptRoot '..\mcc_frame_binding.json') $dst
 
 $cfg = Join-Path $dst 'halomccvr.cfg'
 if (-not (Test-Path $cfg)) {
-    "config_version = 6`r`n# Steam Frame: plain 1:1 gamepad buttons, matching the flat layout`r`nvr_action_mapping = 0`r`n" |
+    "config_version = 6`r`n# Steam Frame: plain 1:1 gamepad buttons, matching the flat layout`r`nvr_action_mapping = 0`r`ny_b_start_chord = 0`r`n" |
         Set-Content -Path $cfg -Encoding ascii -NoNewline
     'wrote a minimal halomccvr.cfg (the mod fills in every other setting with its defaults)'
 } else {
     $text = Get-Content $cfg -Raw
     if ($text -match '(?m)^vr_action_mapping\s*=') { $text = $text -replace '(?m)^vr_action_mapping\s*=.*$', 'vr_action_mapping = 0' }
     else { $text = $text.TrimEnd() + "`r`nvr_action_mapping = 0`r`n" }
+    if ($text -match '(?m)^y_b_start_chord\s*=') { $text = $text -replace '(?m)^y_b_start_chord\s*=.*$', 'y_b_start_chord = 0' }
+    else { $text = $text.TrimEnd() + "`r`ny_b_start_chord = 0`r`n" }
     Set-Content -Path $cfg -Value $text -Encoding ascii -NoNewline
-    'kept the existing halomccvr.cfg, set vr_action_mapping = 0'
+    'kept the existing halomccvr.cfg, set vr_action_mapping = 0 and y_b_start_chord = 0'
 }
 
 $json = (Join-Path $dst 'frame_quadfix.json').Replace('\', '\\')
@@ -78,6 +81,6 @@ $key
 ''
 'Installed. Next:'
 "  1. Double-click $dst\register-frame-layer.reg (admin prompt) once."
-"  2. powershell -ExecutionPolicy Bypass -File `"$dst\apply-frame-binding.ps1`" -Watch"
-'     then start SteamVR streaming to the Frame and run HaloMCCVRLauncher.exe, choose MCC and Launch.'
-'  3. Quit MCC and launch again: the Frame layout is used from then on.'
+"  2. With SteamVR closed: powershell -ExecutionPolicy Bypass -File `"$dst\apply-frame-binding.ps1`" -StopSteamVR"
+'     (selects the Frame layout for Halo in steamvr.vrsettings).'
+'  3. Start SteamVR streaming to the Frame, run HaloMCCVRLauncher.exe, choose MCC and Launch.'

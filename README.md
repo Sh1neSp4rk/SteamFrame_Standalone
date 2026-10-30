@@ -5,7 +5,7 @@ PC VR games and mods running **standalone on the Steam Frame**: no PC, no stream
 - **Guide site:** <https://sh1nesp4rk.github.io/SteamFrame_Standalone/> (the same content as [docs/index.html](docs/index.html))
 - **Per-game write-ups:** [games/](games/) (what the game is, what broke, the fix, the exact commands, status)
 - **Scripts and patches:** [scripts/](scripts/) (indexed in [scripts/README.md](scripts/README.md))
-- **Tools:** [tools/frame-quadfix](tools/frame-quadfix/), an OpenXR API layer for Proton games on the Frame (per-eye quad layers, single interaction profile); [tools/far-cry-ovrshim](tools/far-cry-ovrshim/), a proxy `openvr_api.dll` plus a native overlay helper for 32-bit OpenVR games whose overlays Proton cannot pass; and [scripts/common/vr_audit2.py](scripts/common/vr_audit2.py), which audits which VR shortcuts depend on which Steam game installs
+- **Tools:** [tools/frame-quadfix](tools/frame-quadfix/), an OpenXR API layer for Proton games on the Frame (per-eye quad layers, single interaction profile); [tools/far-cry-ovrshim](tools/far-cry-ovrshim/), a proxy `openvr_api.dll` plus a native overlay helper for 32-bit OpenVR games whose overlays Proton cannot pass; and [scripts/common/vrsettings_bind.ps1](scripts/common/vrsettings_bind.ps1), which selects a SteamVR binding for a game on a Windows PC streaming to the Frame; and [scripts/common/vr_audit2.py](scripts/common/vr_audit2.py), which audits which VR shortcuts depend on which Steam game installs
 - **For platform and mod developers:** [KNOWN-ISSUES.md](KNOWN-ISSUES.md) (what fails in SteamVR, Proton and the zink driver on the Frame, and why)
 - **Controller layout:** [FRAME-LAYOUT.md](FRAME-LAYOUT.md) (one layout for every mod, and each game's deviations)
 
@@ -87,7 +87,9 @@ Failure patterns seen more than once:
 | [Half-Life: VR Mod](games/half-life-vr-mod/) | Proton | Dead end, for now | Skybox assertion on Proton 11; mod VR shutdown on Experimental |
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
 | [Resident Evil 4 (2023) VR](games/re4-remake-vr/) | Streamed from a Windows PC, OpenVR | Working (streamed) | RE4VR; a SteamVR binding plus a REFramework Lua script give the Frame the flat Xbox layout 1:1 |
-| [Titanfall 2 VR](games/titanfall2-vr/) | Streamed only | Not standalone | Needs the mod's installer window on a PC |
+| [DOOM (2016) VR: KHARVOX](games/doom-2016-kharvox/) | Streamed from a Windows PC, OpenXR | Working (streamed) | An OpenXR API layer adds the Xbox buttons KHARVOX has no actions for; flat DOOM layout 1:1 |
+| [Monster Hunter Rise VR](games/mhrise-vr/) | Streamed from a Windows PC, OpenVR | Working (streamed) | REFramework VR; a plugin makes the Frame an XInput pad; VR only from its own library entry |
+| [Titanfall 2 VR](games/titanfall2-vr/) | Streamed from a Windows PC | Not standalone; working streamed | Start from the mod's installer window ("Launch in VR"); the mod's own controls |
 | [Tribes 2 VR](games/tribes2-vr/) | Proton (32-bit) | Dead end | Mod runs; TribesNext login crashes under FEX, 2D shell cannot fuse on the Frame's lenses |
 | [Deus Ex: HR VR](games/deus-ex-hr-vr/) | Proton, OpenXR | Removed | Worked at 18 to 36 fps reprojected with eleven inputs; not worth keeping. Lessons recorded |
 

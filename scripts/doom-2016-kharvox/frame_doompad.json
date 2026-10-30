@@ -1,0 +1,11 @@
+{
+    "file_format_version": "1.0.0",
+    "api_layer": {
+        "name": "XR_APILAYER_frame_doompad",
+        "library_path": ".\\frame_doompad.dll",
+        "api_version": "1.0",
+        "implementation_version": "1",
+        "description": "Steam Frame: full Xbox button set for KHARVOX (DOOM 2016 VR); inactive in other processes",
+        "disable_environment": "DISABLE_FRAME_DOOMPAD"
+    }
+}
