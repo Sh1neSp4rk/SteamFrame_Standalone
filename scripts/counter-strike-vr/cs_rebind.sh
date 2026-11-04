@@ -1,11 +1,14 @@
 #!/bin/bash
 # After engine changes that add OpenXR actions: let SteamVR regenerate the app's default binding (so it knows every
-# action), then lock the Frame binding over it and start the game for play.
+# action), then lock the Frame binding over it and start the game for play. "nobuild" skips the engine build, for
+# controls that went dead with no engine change (SteamVR logs "Loading 0 bindings").
 F=~/.config/openvr/config/openxr/steam.app.3307658986_oculus_touch_0_binding.json
 L=~/.local/share/Steam/logs/vrserver.txt
 pkill -9 -f '[x]ash3d -game cstrike'; sleep 2
-bash ~/PCVR/CSVR/cs_build_engine.sh > /tmp/cs_eng.out 2>&1 || { tail -20 /tmp/cs_eng.out; exit 1; }
-grep -E 'patched|FAILED' /tmp/cs_eng.out
+if [ "$1" != nobuild ]; then
+  bash ~/PCVR/CSVR/cs_build_engine.sh > /tmp/cs_eng.out 2>&1 || { tail -20 /tmp/cs_eng.out; exit 1; }
+  grep -E 'patched|FAILED' /tmp/cs_eng.out
+fi
 chmod 644 "$F" 2>/dev/null; rm -f "$F"
 echo "== pass 1: SteamVR writes its default"
 bash ~/PCVR/CSVR/cs_launch.sh 20 > /dev/null 2>&1

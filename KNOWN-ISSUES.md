@@ -101,6 +101,7 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 
 - **Observed:** SteamVR matches an app's generated `steam.app.<id>_oculus_touch_N_binding.json` to the app's exact list of actions. After a mod update or an API layer adds actions, SteamVR tries to write a new default, fails on the read-only file, logs `SetXrInputConfig: Loading 0 bindings` and no controller input reaches the app at all.
 - **Workaround:** move the old files aside, launch once so SteamVR writes a fresh `_0` default (that launch uses its automatic layout), overwrite that file with the Frame binding and lock it ([watchbind.sh](scripts/halo-mcc/watchbind.sh), [apply-frame-binding.ps1](scripts/halo-mcc/windows/apply-frame-binding.ps1)). Stick clicks belong inside the joystick source (`inputs: { position, click }`).
+- **Also seen with nothing changed (Counter-Strike VR, 2026-11-03):** the game, its action list and the locked file were exactly as they were 11 days earlier, when the binding loaded. SteamVR again logged `Unable to write` and `Loading 0 bindings`, with no `attempting to load default config` line after them. The same two passes fixed it ([cs_rebind.sh](scripts/counter-strike-vr/cs_rebind.sh) `nobuild`). The trigger is unknown.
 
 ### SteamVR blanks the world below about 20 fps
 
@@ -130,6 +131,12 @@ Findings from running PC VR games and mods standalone on a Steam Frame (SteamOS 
 - **Observed:** `pkill -9 vrserver` leaves the compositor and headset driver in a state only a full session restart clears. Stop in the Steam menu killed the launch wrapper but left Wine processes alive in the container; the old wineserver then held the prefix lock and the next launch hung in `wineserver -w`. Kill a Proton launch through its systemd scope (`systemctl --user kill --signal=KILL app-steam-app<id>-<pid>.scope`).
 
 ## OpenGL on zink and Turnip
+
+### A stale GL error makes SteamVR leak every frame
+
+- **Observed (Counter-Strike VR):** SteamVR's OpenGL path in `vrclient.so` calls `glGetError()` after its own GL calls, so an error the app left in the queue is blamed on SteamVR's call. `xrclient_<exe>.txt` logs `SXR_GL_CHECK: error:0x502 at .../openxr_graphics_gl_openvr.cpp:356 -> glGenTextures( 1, &unTextureId )`, and the "Created remote Vulkan image" and "Scene[...]" lines that a healthy GL session logs never appear. The game still renders, but from then on `xrBeginFrame` and `xrEndFrame` allocate Vulkan command buffers every frame and never free them: about 11 MB/s, three blocks of about 50 KB per frame. After 10 to 15 minutes the headset is several GB into swap and the game slows down. `glFinish` before release and restoring the window swap made no difference.
+- **Workaround:** empty the app's GL error queue (a bounded `while (glGetError() != GL_NO_ERROR)`) before `xrBeginFrame`, `xrEndFrame`, `xrAcquireSwapchainImage` and `xrReleaseSwapchainImage` ([cs_port.py](scripts/counter-strike-vr/cs_port.py)). Check any GL port's `xrclient_<exe>.txt` for `SXR_GL_CHECK`; [tools/heap-sampler](tools/heap-sampler/) finds this kind of leak. The October Team Beef Android builds run through Lepton logged the same error, which may be part of why they stayed black.
+- **Who:** Valve (SteamVR's OpenXR runtime should clear or ignore errors it did not raise); mod authors in the meantime.
 
 ### Finish before releasing a swapchain image
 

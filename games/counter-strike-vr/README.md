@@ -1,6 +1,6 @@
 # Counter-Strike VR (Team Beef CSVR)
 
-**Status:** Working. Team Beef's Quest and Pico port built natively for the Frame's ARM64 Linux, talking to SteamVR's OpenXR runtime directly. Controls and the menu cursor confirmed in the headset on 2026-10-23.
+**Status:** Working. Team Beef's Quest and Pico port built natively for the Frame's ARM64 Linux, talking to SteamVR's OpenXR runtime directly. Controls and the menu cursor confirmed in the headset on 2026-10-23. A memory leak that slowed long sessions was fixed on 2026-11-04.
 
 | | |
 |---|---|
@@ -21,16 +21,18 @@ Counter-Strike 1.6 on the open-source Xash3D FWGS engine with OpenXR, motion-con
 - **A latent engine crash.** `CL_FindModelIndex` read `cl.models` one entry past the end of its table. On Android the next value happened to be zero; here it was 2, and the client crashed on load.
 - **Toolchain.** GCC 15 needs `-std=gnu17`; the client needed its C++ headers ahead of `cl_util.h`'s `min` and `max` macros; the weapon calibration file lived under `/sdcard`; `gitlab.xiph.org` answered 502 for the libogg, opusfile and vorbis submodules.
 - **The Frame has inputs the Touch profile lacks.** The game's OpenXR actions follow the Touch controller, which has no bumpers, view button or d-pad. And SteamVR drops a whole custom binding file that names an action missing from the app's suggested bindings: `Loading 0 bindings`, no input, no menu pointer.
+- **A leak inside SteamVR, set off by the engine's stale GL errors.** The renderer leaves `GL_INVALID_OPERATION` in the GL error queue every frame under zink. SteamVR's GL path takes it for its own failure and abandons part of its set-up (`SXR_GL_CHECK: error:0x502 ... glGenTextures` in `xrclient_xash3d.txt`). From then on it leaks Vulkan command buffers in every `xrBeginFrame` and `xrEndFrame`, about 11 MB/s. A 15-minute session reached 11 GB counting swap, and performance fell steadily.
 - **No text keyboard inside OpenXR on the Frame.** The multiplayer menu's player-name prompt could not be answered (the Quest build uses Android's keyboard).
 
 ## The fix
 
-`cs_port.py` patches the engine idempotently (each patch is skipped when its replacement is present):
+`cs_port.py` patches the engine idempotently (each patch is skipped when its replacement, or every line of it marked "Steam Frame", is already present):
 
 - **OpenXR:** `XR_KHR_opengl_enable` with `XrGraphicsBindingOpenGLXlibKHR` (GLX display, drawable and context from SDL's X11 window), `apiVersion` 1.0 (SteamVR's version), `xrGetOpenGLGraphicsRequirementsKHR` before the session, the instance created lazily on first use, GL swapchain images; links GL and X11 plus SteamVR's `/opt/steamvr/bin/linuxarm64/libopenxr_loader.so`.
 - **Renderer:** VR loads the desktop `gl` renderer (zink). It swaps the window once per eye, so `SDL_GL_SwapWindow` is skipped (`CSVR_DESKTOP_SWAP=1` brings it back). The Android haptics service is stubbed; controller rumble still works.
 - **Menu panel:** one flat quad of the arc's width at the arc's distance, shown to both eyes.
 - **The crash:** the `CL_FindModelIndex` loop bound.
+- **The leak:** `VR_ClearGLErrors()` empties the GL error queue before `xrBeginFrame`, `xrEndFrame` and each swapchain acquire and release. Memory now holds at about 100 MB.
 - **Frame inputs:** new boolean actions `bumper_left`, `bumper_right`, `view_button` and `dpad_up/down/left/right` on spare `ovrButton` bits, with `vr_button_bumper_left/right`, `vr_button_view` and `vr_button_dpad_*` console variables; grips press at 80%. Every new action also gets a Touch suggestion, because SteamVR only learns actions from the game's suggestions.
 
 `cs_port_client.py` fixes the client's header order and moves the calibration file to `cstrike/models/vr_weapons.cfg`. `cs_xiph.sh`, `cs_subfix.sh` and `cs_sub2.sh` fetch the pinned submodule commits, the Xiph ones from the `github.com/xiph` mirrors.
@@ -58,6 +60,8 @@ ssh frame "python3 ~/PCVR/CSVR/cs_controls.py"
 # launch through Steam and summarise the logs; after engine changes that add actions, use cs_rebind.sh instead
 ssh frame "bash ~/PCVR/CSVR/cs_launch.sh 40 keep"
 ssh frame "bash ~/PCVR/CSVR/cs_rebind.sh"
+# controls dead with no engine change (vrserver.txt: "Loading 0 bindings"): the same two passes without the build
+ssh frame "bash ~/PCVR/CSVR/cs_rebind.sh nobuild"
 ```
 
 The shortcut runs `game/csvr-run.sh` (written by the setup, not in this repo): `SDL_VIDEODRIVER=x11`, the Mesa GL caps unset, the loader on `LD_LIBRARY_PATH`, then `./xash3d -game cstrike -ref gl -dll dlls/yapb_arm64.so +exec frame_controls.cfg +exec frame_name.cfg`. YaPB loads as the game DLL and loads `cs_arm64.so`. Log: `game/csvr-last.log`. The launch helper kills the game with `-9` because the engine's warning box ignores SIGTERM; that is the game, never vrserver.
@@ -93,6 +97,7 @@ Tap the d-pad: the Frame repeats a held d-pad (see [KNOWN-ISSUES.md](../../KNOWN
 
 - Working with bots offline; controls and the menu cursor confirmed.
 - After adding OpenXR actions to the engine, SteamVR's default binding must be regenerated before the Frame binding is locked over it; `cs_rebind.sh` does the two passes.
+- On 2026-11-03 the controls went dead with nothing changed on our side (`Loading 0 bindings`); `cs_rebind.sh nobuild` restored them.
 - The player name comes from a file or the Steam persona name; there is no in-headset keyboard.
 
 ## Undo
