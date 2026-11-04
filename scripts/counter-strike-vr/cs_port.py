@@ -15,7 +15,10 @@ def patch(rel, pairs):
     s = p.read_text()
     changed = False
     for old, new in pairs:
-        if new in s:
+        # applied already: the whole replacement is present, or every marked line of it is (a later patch may have
+        # inserted lines inside an earlier replacement, so the exact text no longer appears)
+        marked = [l for l in new.splitlines() if MARK in l]
+        if new in s or (marked and all(l in s for l in marked)):
             continue
         n = s.count(old)
         if n != 1:
@@ -111,6 +114,38 @@ if "#endif // ovrEgl" not in s:
     j = s.index("/*\n====", i)
     s = s[:j] + "#endif // ovrEgl\n\n" + s[j:]
     (E / "engine/vr/VrFramebuffer.c").write_text(s)
+
+# SteamVR's OpenGL path calls glGetError() after its own GL calls, so a stale error left by the engine (the renderer raises
+# GL_INVALID_OPERATION every frame under zink) makes it report "SXR_GL_CHECK: error:0x502 ... glGenTextures" and abandon
+# part of its set-up. From then on xrBeginFrame and xrEndFrame allocate Vulkan command buffers every frame that are never
+# freed: the heap grows about 11 MB/s until the headset swaps and the game slows down. Empty the engine's error queue
+# before every OpenXR call that touches GL.
+patch("engine/vr/VrFramebuffer.c", [
+    ("void ovrFramebuffer_Acquire(ovrFramebuffer* frameBuffer) {\n\t// Acquire the swapchain image\n",
+     "// Steam Frame: SteamVR's GL path gives up on a stale engine GL error and then leaks every frame (see cs_port.py)\n"
+     "void VR_ClearGLErrors(void) {\n"
+     "#ifndef ANDROID\n"
+     "\tfor (int i = 0; i < 32 && glGetError() != GL_NO_ERROR; i++) {}\n"
+     "#endif\n"
+     "}\n\n"
+     "void ovrFramebuffer_Acquire(ovrFramebuffer* frameBuffer) {\n"
+     "\tVR_ClearGLErrors(); // Steam Frame: before acquire\n"
+     "\t// Acquire the swapchain image\n"),
+    ("void ovrFramebuffer_Release(ovrFramebuffer* frameBuffer) {\n\tXrSwapchainImageReleaseInfo",
+     "void ovrFramebuffer_Release(ovrFramebuffer* frameBuffer) {\n"
+     "\tVR_ClearGLErrors(); // Steam Frame: before release\n"
+     "\tXrSwapchainImageReleaseInfo"),
+])
+patch("engine/vr/VrRenderer.c", [
+    ("#include <string.h>\n",
+     "#include <string.h>\nvoid VR_ClearGLErrors(void); // Steam Frame: VrFramebuffer.c\n"),
+    ("\t\tOXR(xrBeginFrame(engine->appState.Session, &beginFrameDesc));\n",
+     "\t\tVR_ClearGLErrors(); // Steam Frame: before xrBeginFrame\n"
+     "\t\tOXR(xrBeginFrame(engine->appState.Session, &beginFrameDesc));\n"),
+    ("\tOXR(xrEndFrame(engine->appState.Session, &endFrameInfo));\n",
+     "\tVR_ClearGLErrors(); // Steam Frame: before xrEndFrame\n"
+     "\tOXR(xrEndFrame(engine->appState.Session, &endFrameInfo));\n"),
+])
 
 s = (E / "engine/vr/VrFramebuffer.h").read_text()
 if "Steam Frame" not in s:
