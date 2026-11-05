@@ -220,7 +220,7 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | Script | What it does |
 |---|---|
 | [contractors/contractors](contractors/contractors) | Launch-option wrapper that skips Unreal's prerequisite bootstrapper. |
-| [cyberpunk-2077-vr/cp77-launch.cmd](cyberpunk-2077-vr/cp77-launch.cmd) | Windows (streaming PC): launch-option wrapper for Cyberpunk 2077 with CyberpunkVRPort. Flat unless `-vr` is passed (a "Cyberpunk 2077 (VR)" shortcut runs `steam.exe -applaunch 1091500 -vr`), by switching RED4ext's plugin ignore list; keeps one `UserSettings.json` per mode; starts SteamVR for VR launches. |
+| [cyberpunk-2077-vr/cp77-launch.cmd](cyberpunk-2077-vr/cp77-launch.cmd) | Windows (streaming PC): launch-option wrapper for Cyberpunk 2077 with CyberpunkVRPort. Flat unless `-vr` is passed (a "Cyberpunk 2077 (VR)" shortcut runs `steam.exe -applaunch 1091500 -vr`), by turning RED4ext's plugin system off and parking the companion mods (CET's loader, `r6\scripts`, the Equipment-EX archives, redscript's `scripts.ini`) in `_vr\parked`; keeps one `UserSettings.json` per mode; starts SteamVR for VR launches. |
 | [cyberpunk-2077-vr/red4ext-config.flat.ini](cyberpunk-2077-vr/red4ext-config.flat.ini), [red4ext-config.vr.ini](cyberpunk-2077-vr/red4ext-config.vr.ini) | The two RED4ext `config.ini` variants the wrapper copies into place (plugin ignored, plugin loaded). |
 | [halo-mcc/repair-mcc-prefix.sh](halo-mcc/repair-mcc-prefix.sh) | Restores Proton's ARM64 runtime DLLs after the EAC installer overwrote them. |
 | [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry; sets the layer mode, keeps Proton's log off, passes the tuning files. |

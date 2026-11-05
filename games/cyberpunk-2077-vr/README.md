@@ -27,8 +27,10 @@ Luke Ross's R.E.A.L. VR mod for Cyberpunk 2077 was taken down by CD Projekt in J
 
 The plugin loads whenever RED4ext finds its DLL, and on its first start it merges a VR preset (graphics, every control binding, HUD and comfort values) into the game's `UserSettings.json`. Two things keep the normal library entry flat and untouched:
 
-1. **RED4ext's ignore list.** `red4ext\config.ini` is TOML; `ignored = [ "cyberpunkvrport" ]` under `[plugins]` makes RED4ext skip the plugin by its DLL name. [cp77-launch.cmd](../../scripts/cyberpunk-2077-vr/cp77-launch.cmd) copies [red4ext-config.flat.ini](../../scripts/cyberpunk-2077-vr/red4ext-config.flat.ini) or [red4ext-config.vr.ini](../../scripts/cyberpunk-2077-vr/red4ext-config.vr.ini) over it before every launch.
+1. **RED4ext's plugin switch.** `red4ext\config.ini` is TOML; `enabled = false` under `[plugins]` keeps every plugin out of a flat launch (an `ignored = [ "cyberpunkvrport" ]` list would skip just the port, by its DLL name). [cp77-launch.cmd](../../scripts/cyberpunk-2077-vr/cp77-launch.cmd) copies [red4ext-config.flat.ini](../../scripts/cyberpunk-2077-vr/red4ext-config.flat.ini) or [red4ext-config.vr.ini](../../scripts/cyberpunk-2077-vr/red4ext-config.vr.ini) over it before every launch.
 2. **One settings file per mode.** The wrapper keeps `_vr\profiles\UserSettings.flat.json` and `UserSettings.vr.json`, copies the right one into `%LOCALAPPDATA%\CD Projekt Red\Cyberpunk 2077\` before the game starts and saves it back after the game exits. The VR preset therefore lands only in the VR profile.
+
+3. **Companions parked for flat.** Cyber Engine Tweaks loads through `bin\x64\version.dll`, redscript hooks the game through `engine\config\base\scripts.ini`, and Equipment-EX ships archives plus `r6\scripts`. Before a flat launch the wrapper moves those pieces into `_vr\parked\` (with the plugin system off, ArchiveXL, TweakXL and Codeware stay out as well); before a VR launch it moves them back. `cp77-launch.cmd -prep` and `-vr -prep` do that without starting the game.
 
 The wrapper then starts `bin\x64\Cyberpunk2077.exe` directly (no REDlauncher) and waits for it. Steam's `-applaunch` passes extra arguments through to the launch option, so a non-Steam shortcut running `steam.exe -applaunch 1091500 -vr` is the VR entry and the game's own entry stays flat.
 
@@ -46,13 +48,13 @@ The first VR launch shows the port's launcher window (render resolution, DEBUG o
 ## Check it worked
 
 - `_vr\cp77-launch.log`: `start mode=flat` or `start mode=vr ... -vr`, `launching Cyberpunk2077.exe`, then `game exited` and `saved <mode> profile`.
-- `red4ext\logs\red4ext-<date>.log`: `0 plugin(s) loaded` on a flat launch, the cyberpunkvrport plugin listed on a VR launch.
+- `red4ext\logs\red4ext-<date>.log`: no plugins on a flat launch (plugin system off); cyberpunkvrport, ArchiveXL, TweakXL and Codeware listed on a VR launch. A stock flat launch leaves Cyber Engine Tweaks' and redscript's logs untouched.
 - VR launch: `bin\x64\cyberpunkvrport.log` appears, and the port's launcher window opens before the game.
 
 ## Status and known issues
 
 - VR not yet confirmed in the headset; the Frame controller mapping (the port's own layout, which mirrors the game's gamepad bindings) is unverified.
-- The companions and their frameworks are not VR-only: a flat launch also loads Cyber Engine Tweaks (it asks for an overlay key on its first run), the Equipment-EX wardrobe, Visual Holsters and Nova Optics. Verified: with all of them installed the flat launch still logs the three framework plugins, a clean redscript compile and the VR plugin ignored.
+- The companions and their frameworks are VR-only here: a flat launch parks them (see above) and was verified stock, with no Cyber Engine Tweaks or redscript activity and RED4ext's plugin system off; a VR launch moves them back. Updating a parked mod while it is parked leaves two copies; the wrapper logs that and keeps the live one.
 - The wrapper is a `.cmd`, so a console window sits behind the game for the session. Harmless when streaming.
 - Killing the game instead of quitting skips the settings save for that run; the next launch of the same mode restores the previous profile.
 - Standalone on the Frame was not attempted: an 81 GB Direct3D 12 game with an x86-64 RED4ext plugin chain under FEX is out of scope for now.
