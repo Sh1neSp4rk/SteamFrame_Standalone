@@ -13,8 +13,9 @@ rem
 rem  What it does, in order:
 rem   1. copies red4ext-config.flat.ini (every plugin off) or red4ext-config.vr.ini (all on)
 rem      over red4ext\config.ini
-rem   2. flat: moves the companion pieces into _vr\parked\ (CET's bin\x64\version.dll, the
-rem      r6\scripts folder, the Equipment-EX archives, redscript's engine\config\base\scripts.ini);
+rem   2. flat: moves the mod pieces into _vr\parked\ (CET's bin\x64\version.dll, the r6\scripts
+rem      and r6\tweaks folders, the whole archive\pc\mod folder, redscript's
+rem      engine\config\base\scripts.ini, the port's engine\config\platform\pc\vrcam_cpu_tweaks.ini);
 rem      vr: moves them back. Steam's own files are never touched.
 rem   3. swaps in this mode's own settings file (profiles\UserSettings.<mode>.json), so the
 rem      VR preset the plugin merges on its first start never touches the flat settings
@@ -65,7 +66,7 @@ if not exist "%VRDIR%\red4ext-config.%MODE%.ini" (
 )
 
 rem ---- 2. companion pieces: parked for flat, live for vr -----------------------------------
-for %%p in ("bin\x64\version.dll" "r6\scripts" "archive\pc\mod\EquipmentEx.archive" "archive\pc\mod\EquipmentEx.archive.xl" "engine\config\base\scripts.ini") do (
+for %%p in ("bin\x64\version.dll" "r6\scripts" "r6\tweaks" "archive\pc\mod" "engine\config\base\scripts.ini" "engine\config\platform\pc\vrcam_cpu_tweaks.ini") do (
     if "%MODE%"=="vr" (call :unpark "%%~p") else (call :park "%%~p")
 )
 
@@ -130,6 +131,7 @@ exit /b %RC%
 rem ---- subroutines: one relative path (file or folder) each --------------------------------
 :park
 set "rel=%~1"
+rd "%PARK%\%rel%" 2>nul
 if not exist "%ROOT%\%rel%" goto :eof
 if exist "%PARK%\%rel%" (
     echo [%date% %time%] WARNING %rel% is live and a parked copy exists; left both alone>>"%LOG%"
@@ -146,6 +148,7 @@ goto :eof
 
 :unpark
 set "rel=%~1"
+rd "%ROOT%\%rel%" 2>nul
 if not exist "%PARK%\%rel%" goto :eof
 if exist "%ROOT%\%rel%" (
     echo [%date% %time%] WARNING %rel% exists live and parked; kept the live one>>"%LOG%"

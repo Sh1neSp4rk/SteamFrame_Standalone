@@ -150,7 +150,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#jkxr" data-guide="jkxr"><span class="dot working"></span>Jedi Academy &amp; Outcast VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Streamed from a Windows PC</h2>
-  <a href="#cyberpunk" data-guide="cyberpunk"><span class="dot untested"></span>Cyberpunk 2077 VR</a>
+  <a href="#cyberpunk" data-guide="cyberpunk"><span class="dot working"></span>Cyberpunk 2077 VR</a>
   <a href="#doom2016" data-guide="doom2016"><span class="dot working"></span>DOOM (2016) VR: KHARVOX</a>
   <a href="#halo" data-guide="halo"><span class="dot working"></span>Halo: MCC VR (Windows PC)</a>
   <a href="#mhrise" data-guide="mhrise"><span class="dot working"></span>Monster Hunter Rise VR</a>
@@ -1304,13 +1304,13 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 <header class="g-head">
   <span class="status untested">Installed (streamed), VR unverified</span>
   <h1>Cyberpunk 2077 VR: CyberpunkVRPort streamed from a Windows PC, with a flat entry kept</h1>
-  <p class="lede">Streamed from a Windows PC, not standalone. Luke Ross's R.E.A.L. VR mod for this game was taken down in January 2026 and left out of his free re-release, so the open-source CyberpunkVRPort (a RED4ext plugin: real stereo through OpenXR, 6-DoF, motion-controlled hands, a native Steam Frame controller profile) is the mod. The plugin loads on every launch and rewrites the game's settings file with a VR preset on its first start, so a launch wrapper keeps the normal library entry flat and gives each mode its own settings file.</p>
+  <p class="lede">Streamed from a Windows PC, not standalone. Luke Ross's R.E.A.L. VR mod for this game was taken down in January 2026 and left out of his free re-release, so the open-source CyberpunkVRPort (a RED4ext plugin: real stereo through OpenXR, 6-DoF, motion-controlled hands, a native Steam Frame controller profile) is the mod. The plugin loads on every launch and rewrites the game's settings file with a VR preset on its first start, so a launch wrapper keeps the normal library entry stock and gives each mode its own settings file. On SteamVR the port's default engine stereo arrives in the headset as one flat side-by-side picture; its second-view stereo (<code>xr_engine_stereo=0</code>) is what works.</p>
   <dl class="facts">
     <dt>Steam app</dt><dd>1091500 · game 2.5</dd>
-    <dt>VR mod</dt><dd>dariulone's CyberpunkVRPort 0.2.1 (MIT) on RED4ext 1.31.0, OpenXR (SteamVR) or OpenVR</dd>
+    <dt>VR mod</dt><dd>dariulone's CyberpunkVRPort 0.1.9 (MIT) on RED4ext 1.31.0 with CET, redscript, ArchiveXL, TweakXL and Codeware; OpenXR through SteamVR. 0.2.1 (and engine stereo) show a flat side-by-side picture on SteamVR</dd>
     <dt>Route</dt><dd>Windows PC (RTX 4080 Laptop) streaming to the Frame through SteamVR</dd>
     <dt>Fix</dt><dd><code>cp77-launch.cmd</code> + two RED4ext <code>config.ini</code> variants + per-mode <code>UserSettings.json</code></dd>
-    <dt>State</dt><dd>2026-11-04: flat launch confirmed through Steam; VR launch not yet checked in the headset</dd>
+    <dt>State</dt><dd>2026-11-04: stereo and menus confirmed in the headset with second-view stereo; controls and performance not yet reported</dd>
   </dl>
 </header>
 <h2>Keeping a flat launch</h2>
@@ -1322,12 +1322,13 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 </ul>
 <h2>Steps</h2>
 <ol>
-<li>Extract RED4ext (1.31.0 or newer) and the CyberpunkVRPort release zip into the game root; nothing they add exists in a clean install. Game version 2.5 is required.</li>
+<li>Extract RED4ext 1.31.0, Cyber Engine Tweaks, redscript, ArchiveXL, TweakXL, Codeware and CyberpunkVRPort 0.1.9 into the game root; nothing they add exists in a clean install. Game version 2.5 is required.</li>
+<li>Start the VR entry once (pick Steam Frame in the launcher), quit from inside the game, and set <code>xr_engine_stereo=0</code> in <code>bin\x64\vrport.ini</code>. With engine stereo on, the port's SteamVR submit path sends the engine's 4080x2056 side-by-side frame to both eyes whole, and menus show as half a screen (the port's tracker has the same for Pimax, Quest 3 over Steam Link and a Steam Frame).</li>
 <li>Create <code>&lt;Cyberpunk 2077&gt;\_vr\</code> with <code>cp77-launch.cmd</code> and the two <code>red4ext-config.*.ini</code> files; set the launch option; add the shortcut.</li>
 <li>The companions the port lists, from Nexus (login needed): Visual Holsters, Equipment-EX, Nova Optics and More Occluders (Scripted), plus their own needs: Native Settings UI (Nexus) and Cyber Engine Tweaks, ArchiveXL, TweakXL, Codeware and redscript (GitHub). A flat launch parks them; the port itself runs without them.</li>
 </ol>
 <h2>Check it worked</h2>
-<p><code>_vr\cp77-launch.log</code> shows the mode and <code>launching Cyberpunk2077.exe</code>; <code>red4ext\logs\</code> shows the plugin count; a VR launch opens the port's launcher window (render resolution, DEBUG off) and writes <code>bin\x64\cyberpunkvrport.log</code>.</p>
+<p><code>_vr\cp77-launch.log</code> shows the mode and <code>launching Cyberpunk2077.exe</code>; <code>red4ext\logs\</code> shows the plugin count; a VR launch opens the port's launcher window (render resolution, DEBUG off) and writes <code>bin\x64\cyberpunkvrport.log</code>, which should start with <code>[mono] OFF: MAIN is one eye, VRCAM the other</code>.</p>
 <p>Full write-up: <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone/tree/main/games/cyberpunk-2077-vr">games/cyberpunk-2077-vr</a>.</p>
 </article>
 
