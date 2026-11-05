@@ -16,6 +16,8 @@ Every script starts with a comment or docstring saying what it does. Python scri
 | [art_inventory.py](common/art_inventory.py) | Lists shortcuts and Steam apps with launch options, and which library art is cached for each. |
 | [make_vrart.ps1](common/make_vrart.ps1) | Windows PowerShell: builds red-labelled "GAME VR" library art (capsule, header, hero, logo) from Steam's cached art, for the VR entries. |
 | [make_portrait.ps1](common/make_portrait.ps1) | Windows PowerShell: composes a 600x900 portrait from Steam's cached hero and header for games whose cache has no portrait capsule. |
+| [make_vrart.py](common/make_vrart.py) | Windows, Python with Pillow: the same red "GAME VR" tiles (capsule, header, hero, logo) from Steam's CDN art, driven by a JSON job list, plus an optional blue "STREAM FROM PC" pill above the red one for the headset's copy of a PC-streamed entry. |
+| [make_vrart.py](common/make_vrart.py) | Windows, Python with Pillow: the same red "GAME VR" tiles (capsule, header, hero, logo) from Steam's CDN art, driven by a JSON job list, plus an optional blue "STREAM FROM PC" pill above the red one for the headset's copy of a PC-streamed entry. |
 | [flatvr-launch.sh](common/flatvr-launch.sh) | Launch-option wrapper that runs a modded Steam game flat unless `-frame-vr` is on the command line, so one install gets a flat library entry and a "Game VR" shortcut. Per-game cases set the mod's overrides; the `farcry` case also starts hudbridge. |
 | [flatvr_setup.sh](common/flatvr_setup.sh) | Applies that split to DUSK, Left 4 Dead 2, Portal 2 and Bendy. |
 | [vr_audit2.py](common/vr_audit2.py) | Audits every VR shortcut for how it depends on a Steam game install: path reference, symlink, hard link, or the game's Proton prefix (which Steam deletes on uninstall). |
@@ -214,11 +216,13 @@ The proxy `openvr_api.dll` and the hudbridge helper are in [tools/far-cry-ovrshi
 | [deus-ex-hr-vr/dx_mode.py](deus-ex-hr-vr/dx_mode.py), [dx_flatvr.py](deus-ex-hr-vr/dx_flatvr.py) | The four graphics registry values per mode (the game rewrites them), and the flat/VR split. |
 | [deus-ex-hr-vr/dx_controls.py](deus-ex-hr-vr/dx_controls.py), [dx_scale.sh](deus-ex-hr-vr/dx_scale.sh) | Frame binding with the simple profile locked plus ini button maps; `WorldUnitsPerMetre`. |
 
-### contractors, doom-2016-kharvox, halo-mcc, mhrise-vr, re4-remake-vr, snapshot-vr
+### contractors, cyberpunk-2077-vr, doom-2016-kharvox, halo-mcc, mhrise-vr, re4-remake-vr, snapshot-vr
 
 | Script | What it does |
 |---|---|
 | [contractors/contractors](contractors/contractors) | Launch-option wrapper that skips Unreal's prerequisite bootstrapper. |
+| [cyberpunk-2077-vr/cp77-launch.cmd](cyberpunk-2077-vr/cp77-launch.cmd) | Windows (streaming PC): launch-option wrapper for Cyberpunk 2077 with CyberpunkVRPort. Flat unless `-vr` is passed (a "Cyberpunk 2077 (VR)" shortcut runs `steam.exe -applaunch 1091500 -vr`), by switching RED4ext's plugin ignore list; keeps one `UserSettings.json` per mode; starts SteamVR for VR launches. |
+| [cyberpunk-2077-vr/red4ext-config.flat.ini](cyberpunk-2077-vr/red4ext-config.flat.ini), [red4ext-config.vr.ini](cyberpunk-2077-vr/red4ext-config.vr.ini) | The two RED4ext `config.ini` variants the wrapper copies into place (plugin ignored, plugin loaded). |
 | [halo-mcc/repair-mcc-prefix.sh](halo-mcc/repair-mcc-prefix.sh) | Restores Proton's ARM64 runtime DLLs after the EAC installer overwrote them. |
 | [halo-mcc/mcc](halo-mcc/mcc) | Launch-option wrapper: flat without EAC from the normal entry, the VR mod from the "Anti-Cheat Disabled" entry; sets the layer mode, keeps Proton's log off, passes the tuning files. |
 | [halo-mcc/patches/](halo-mcc/patches/) | MCCVR source patch: Halo 3 shared eye cover (cross-eyed/zoomed fix), weapon-flicker fix, `FRAME_WORLD_SCALE`/`FRAME_STEREO_SCALE`, eye dump and flicker diagnostics. |

@@ -86,6 +86,8 @@ Failure patterns seen more than once:
 | [Breachers](games/breachers/) | Proton | Dead end | .NET launcher, then EAC integrity check |
 | [Half-Life: VR Mod](games/half-life-vr-mod/) | Proton | Dead end, for now | Skybox assertion on Proton 11; mod VR shutdown on Experimental |
 | [UEVR injector](games/uevr/) | Proton | Dead end, by choice | Worked; result not kept |
+| [Cyberpunk 2077 VR](games/cyberpunk-2077-vr/) | Streamed from a Windows PC, OpenXR | Installed; flat confirmed, VR not yet checked in the headset | CyberpunkVRPort (open source, a RED4ext plugin); a launch wrapper keeps the normal entry flat, a "Cyberpunk 2077 (VR)" shortcut passes `-vr` |
+| [Cyberpunk 2077 VR](games/cyberpunk-2077-vr/) | Streamed from a Windows PC, OpenXR | Installed; flat confirmed, VR not yet checked in the headset | CyberpunkVRPort (open source, a RED4ext plugin); a launch wrapper keeps the normal entry flat, a "Cyberpunk 2077 (VR)" shortcut passes `-vr` |
 | [Resident Evil 4 (2023) VR](games/re4-remake-vr/) | Streamed from a Windows PC, OpenVR | Working (streamed) | RE4VR; a SteamVR binding plus a REFramework Lua script give the Frame the flat Xbox layout 1:1 |
 | [DOOM (2016) VR: KHARVOX](games/doom-2016-kharvox/) | Streamed from a Windows PC, OpenXR | Working (streamed) | An OpenXR API layer adds the Xbox buttons KHARVOX has no actions for; flat DOOM layout 1:1 |
 | [Monster Hunter Rise VR](games/mhrise-vr/) | Streamed from a Windows PC, OpenVR | Working (streamed) | REFramework VR; a plugin makes the Frame an XInput pad; VR only from its own library entry |

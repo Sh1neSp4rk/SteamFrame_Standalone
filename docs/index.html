@@ -150,6 +150,7 @@ summary { cursor: pointer; font-weight: 500; }
   <a href="#jkxr" data-guide="jkxr"><span class="dot working"></span>Jedi Academy &amp; Outcast VR</a>
   <a href="#avp" data-guide="avp"><span class="dot working"></span>Aliens versus Predator VR</a>
   <h2>Streamed from a Windows PC</h2>
+  <a href="#cyberpunk" data-guide="cyberpunk"><span class="dot untested"></span>Cyberpunk 2077 VR</a>
   <a href="#doom2016" data-guide="doom2016"><span class="dot working"></span>DOOM (2016) VR: KHARVOX</a>
   <a href="#halo" data-guide="halo"><span class="dot working"></span>Halo: MCC VR (Windows PC)</a>
   <a href="#mhrise" data-guide="mhrise"><span class="dot working"></span>Monster Hunter Rise VR</a>
@@ -1296,6 +1297,37 @@ err:msvcrt:_wassert (L"!status",L"..\\src-vrclient\\vrcompositor_manual.c",2264)
 <li>Headset on, SteamVR Ready, start the shortcut, click <strong>Launch in VR</strong> through the dashboard's Desktop view, wait about 35 seconds. Keep the headset on: standby ends the session after about 30 seconds.</li>
 </ol>
 <p>The Frame controllers work with the mod's own bindings; nothing was changed for them.</p>
+</article>
+
+<!-- ===================== Cyberpunk 2077 VR ===================== -->
+<article id="cyberpunk" class="guide" data-title="Cyberpunk 2077 VR" hidden>
+<header class="g-head">
+  <span class="status untested">Installed (streamed), VR unverified</span>
+  <h1>Cyberpunk 2077 VR: CyberpunkVRPort streamed from a Windows PC, with a flat entry kept</h1>
+  <p class="lede">Streamed from a Windows PC, not standalone. Luke Ross's R.E.A.L. VR mod for this game was taken down in January 2026 and left out of his free re-release, so the open-source CyberpunkVRPort (a RED4ext plugin: real stereo through OpenXR, 6-DoF, motion-controlled hands, a native Steam Frame controller profile) is the mod. The plugin loads on every launch and rewrites the game's settings file with a VR preset on its first start, so a launch wrapper keeps the normal library entry flat and gives each mode its own settings file.</p>
+  <dl class="facts">
+    <dt>Steam app</dt><dd>1091500 · game 2.5</dd>
+    <dt>VR mod</dt><dd>dariulone's CyberpunkVRPort 0.2.1 (MIT) on RED4ext 1.31.0, OpenXR (SteamVR) or OpenVR</dd>
+    <dt>Route</dt><dd>Windows PC (RTX 4080 Laptop) streaming to the Frame through SteamVR</dd>
+    <dt>Fix</dt><dd><code>cp77-launch.cmd</code> + two RED4ext <code>config.ini</code> variants + per-mode <code>UserSettings.json</code></dd>
+    <dt>State</dt><dd>2026-11-04: flat launch confirmed through Steam; VR launch not yet checked in the headset</dd>
+  </dl>
+</header>
+<h2>Keeping a flat launch</h2>
+<ul>
+<li><strong>RED4ext's ignore list:</strong> <code>red4ext\config.ini</code> is TOML; <code>ignored = [ "cyberpunkvrport" ]</code> under <code>[plugins]</code> makes RED4ext skip the plugin by its DLL name. The wrapper copies <code>red4ext-config.flat.ini</code> or <code>red4ext-config.vr.ini</code> over it before every launch (a flat launch logs <code>0 plugin(s) loaded</code>).</li>
+<li><strong>One settings file per mode:</strong> the wrapper keeps <code>_vr\profiles\UserSettings.flat.json</code> and <code>UserSettings.vr.json</code>, copies the right one into <code>%LOCALAPPDATA%\CD Projekt Red\Cyberpunk 2077\</code> before the game starts and saves it back afterwards, so the plugin's VR preset (graphics, every control binding, HUD, comfort) lands only in the VR profile.</li>
+<li><strong>Two entries:</strong> the launch option on Cyberpunk 2077 is <code>"&lt;Cyberpunk 2077&gt;\_vr\cp77-launch.cmd" %command%</code>; Steam passes <code>-applaunch</code> arguments through, so a non-Steam shortcut running <code>steam.exe -applaunch 1091500 -vr</code> ("Cyberpunk 2077 (VR)", VR library ticked) is the VR entry. The wrapper starts SteamVR first if it is not running, then <code>bin\x64\Cyberpunk2077.exe</code> directly.</li>
+</ul>
+<h2>Steps</h2>
+<ol>
+<li>Extract RED4ext (1.31.0 or newer) and the CyberpunkVRPort release zip into the game root; nothing they add exists in a clean install. Game version 2.5 is required.</li>
+<li>Create <code>&lt;Cyberpunk 2077&gt;\_vr\</code> with <code>cp77-launch.cmd</code> and the two <code>red4ext-config.*.ini</code> files; set the launch option; add the shortcut.</li>
+<li>Optional, on Nexus (login needed): Visual Holsters, Equipment-EX, Nova Optics and More Occluders (Scripted v0.3), which the port lists as requirements but loads without.</li>
+</ol>
+<h2>Check it worked</h2>
+<p><code>_vr\cp77-launch.log</code> shows the mode and <code>launching Cyberpunk2077.exe</code>; <code>red4ext\logs\</code> shows the plugin count; a VR launch opens the port's launcher window (render resolution, DEBUG off) and writes <code>bin\x64\cyberpunkvrport.log</code>.</p>
+<p>Full write-up: <a href="https://github.com/Sh1neSp4rk/SteamFrame_Standalone/tree/main/games/cyberpunk-2077-vr">games/cyberpunk-2077-vr</a>.</p>
 </article>
 
 <!-- ===================== DOOM (2016) VR: KHARVOX ===================== -->
