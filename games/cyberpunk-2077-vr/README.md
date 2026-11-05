@@ -21,7 +21,7 @@ Luke Ross's R.E.A.L. VR mod for Cyberpunk 2077 was taken down by CD Projekt in J
 - RED4ext 1.31.0 or newer: `bin\x64\winmm.dll` plus `red4ext\RED4ext.dll`.
 - The port: `red4ext\plugins\cyberpunkvrport\` (plugin, shaders, grips, Lua mods, scripts, its own archive and TweakDB records) and `bin\x64\openvr_api.dll`. Cyber Engine Tweaks, ArchiveXL, TweakXL, Codeware and redscript are not needed; the plugin carries its own copies of what it uses.
 - An OpenXR runtime running before the game. SteamVR is the active runtime on the test PC; the wrapper starts it if it is not up.
-- Listed as requirements by the port, not installed on the test PC yet (all on Nexus, which needs a login): Visual Holsters (Automatic Clothes Swap), Equipment-EX, Nova Optics and More Occluders (Scripted v0.3). The plugin loads without them; holster visuals and optics are what they add.
+- The companions the port lists, installed on the test PC as well: Visual Holsters 1.4, Equipment-EX 1.2.10, Nova Optics 1.4.2 and More Occluders (Scripted 0.4) from Nexus (a login is needed there), plus what they need themselves: Native Settings UI (Nexus) and Cyber Engine Tweaks, ArchiveXL, TweakXL, Codeware and redscript (GitHub releases). All drop into the game root and none overwrites a game file. The plugin loads without them; holster visuals, the wardrobe and the exposure fix are what they add.
 
 ## Keeping a flat launch
 
@@ -52,7 +52,7 @@ The first VR launch shows the port's launcher window (render resolution, DEBUG o
 ## Status and known issues
 
 - VR not yet confirmed in the headset; the Frame controller mapping (the port's own layout, which mirrors the game's gamepad bindings) is unverified.
-- The port's optional Nexus companions are not installed (see above).
+- The companions and their frameworks are not VR-only: a flat launch also loads Cyber Engine Tweaks (it asks for an overlay key on its first run), the Equipment-EX wardrobe, Visual Holsters and Nova Optics. Verified: with all of them installed the flat launch still logs the three framework plugins, a clean redscript compile and the VR plugin ignored.
 - The wrapper is a `.cmd`, so a console window sits behind the game for the session. Harmless when streaming.
 - Killing the game instead of quitting skips the settings save for that run; the next launch of the same mode restores the previous profile.
 - Standalone on the Frame was not attempted: an 81 GB Direct3D 12 game with an x86-64 RED4ext plugin chain under FEX is out of scope for now.
